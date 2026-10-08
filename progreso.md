@@ -42,10 +42,11 @@ tilde usando `superpowers:subagent-driven-development`.
   páginas. *(commits `f0670ad4..affed747`; 1 ronda de fix: landmark
   `<main>`, skip-link, `aria-label` de navs, conteo de carrito accesible,
   email como `mailto:`)*
-- [ ] **Tarea 8 — Home page (dirección "Hero con Gemi, antes/después").**
-  Hero + destacados + banners de confianza. *(commit `b4c3737c` ya hecho
-  por el implementador; revisión en curso — generic + ecc:react-reviewer +
-  ecc:typescript-reviewer corriendo)*
+- [x] **Tarea 8 — Home page (dirección "Hero con Gemi, antes/después").**
+  Hero + destacados + banners de confianza. *(commits `affed747..1f0bb223`;
+  1 ronda de fix: landmark `<main>` anidado — hallazgo que resultó
+  sistémico y se corrigió preventivamente en el texto del plan para las
+  Tareas 10, 12, 13, 15, 18 y 19 antes de ejecutarlas)*
 - [ ] **Tarea 9 — Lógica de filtrado y orden del listado.** `sortProducts`
   por precio/nombre.
 - [ ] **Tarea 10 — Página de listado por categoría.** Grilla + filtro +
