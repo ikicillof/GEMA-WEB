@@ -80,8 +80,16 @@ tilde usando `superpowers:subagent-driven-development`.
   `2689ea77..84b8896f`; sin rondas de fix — se corrigió una omisión del
   brief que solo chequeaba disponibilidad por color, no la del
   producto completo)*
-- [ ] **Tarea 15 — Auth gate en checkout (Supabase) + zona de envío.**
-  Login/registro exigido solo al pagar.
+- [x] **Tarea 15 — Auth gate en checkout (Supabase) + zona de envío.**
+  Login/registro exigido solo al pagar. *(commits `134a98a1..1db19c3b`;
+  1 ronda de fix — la más grande del plan hasta ahora: los 3 revisores
+  encontraron una carrera de hidratación real que redirigía a un
+  comprador con carrito lleno fuera de `/checkout`, manejo incorrecto
+  de cookies de sesión en `proxy.ts`, y falta de accesibilidad/manejo
+  de errores en el login; el revisor de React incluso probó el fix
+  revirtiéndolo y confirmando que el test de regresión falla sin él.
+  Nota: el login real todavía no funciona end-to-end porque no hay un
+  proyecto Supabase conectado — ver sección de abajo)*
 - [ ] **Tarea 16 — Pedidos.** Tipos, repositorio (in-memory + Supabase),
   `createOrderFromCart`.
 - [ ] **Tarea 17 — Mercado Pago.** Preferencia de pago + webhook idempotente.
