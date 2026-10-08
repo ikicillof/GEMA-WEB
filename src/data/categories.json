@@ -1,0 +1,5 @@
+[
+  { "slug": "lamparas", "name": "Lámparas", "order": 1 },
+  { "slug": "organizadores", "name": "Organizadores", "order": 2 },
+  { "slug": "calendarios", "name": "Calendarios", "order": 3 }
+]

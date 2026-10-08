@@ -1,0 +1,42 @@
+[
+  {
+    "id": "lumalee",
+    "slug": "lampara-lumalee",
+    "name": "Lámpara Lumalee",
+    "description": "Una lámpara con forma de nube que le pone color a cualquier mesa de luz. Le cambia la cara al rincón más apagado de tu cuarto.",
+    "categorySlug": "lamparas",
+    "price": 32000,
+    "colors": [
+      { "name": "Rosa Gemma", "hex": "#FF4DA6", "available": true },
+      { "name": "Turquesa", "hex": "#00E6D2", "available": true },
+      { "name": "Amarillo", "hex": "#FFD93D", "available": false }
+    ],
+    "photos": ["/products/lumalee-1.jpg", "/products/lumalee-2.jpg"],
+    "available": true
+  },
+  {
+    "id": "calendario-perpetuo",
+    "slug": "calendario-perpetuo-gemma",
+    "name": "Calendario Perpetuo Gemma",
+    "description": "Calendario de escritorio que se usa todos los años. Gomita, redondeado, con un corazón amarillo de regalo.",
+    "categorySlug": "calendarios",
+    "price": 14500,
+    "colors": [
+      { "name": "Violeta Oscuro", "hex": "#6D28D9", "available": true },
+      { "name": "Rosa Pastel", "hex": "#FFB4DB", "available": true }
+    ],
+    "photos": ["/products/calendario-1.jpg"],
+    "available": true
+  },
+  {
+    "id": "porta-llaves-ondas",
+    "slug": "porta-llaves-ondas",
+    "name": "Porta Llaves Ondas",
+    "description": "Para la entrada de tu casa: ondas gorditas que sostienen las llaves y suman color apenas abrís la puerta.",
+    "categorySlug": "organizadores",
+    "price": 9800,
+    "colors": [{ "name": "Rosa Gemma", "hex": "#FF4DA6", "available": false }],
+    "photos": ["/products/porta-llaves-1.jpg"],
+    "available": false
+  }
+]
