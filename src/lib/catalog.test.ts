@@ -47,4 +47,20 @@ describe('catalog adapter', () => {
   it('returns undefined for an unknown category slug', () => {
     expect(getCategoryBySlug('no-existe')).toBeUndefined()
   })
+
+  it('returns a defensive copy, not the internal array', () => {
+    const result = getAllProducts()
+    result.push({
+      id: 'should-not-persist',
+      slug: 'should-not-persist',
+      name: 'should not persist',
+      description: '',
+      categorySlug: 'lamparas',
+      price: 0,
+      colors: [],
+      photos: [],
+      available: true,
+    })
+    expect(getAllProducts()).toHaveLength(3)
+  })
 })

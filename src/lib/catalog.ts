@@ -6,7 +6,7 @@ const products = productsData as Product[]
 const categories = categoriesData as Category[]
 
 export function getAllProducts(): Product[] {
-  return products
+  return [...products]
 }
 
 export function getProductBySlug(slug: string): Product | undefined {
