@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Poppins } from 'next/font/google'
-import { Header } from '@/components/layout/Header'
+import { CartProvider } from '@/components/cart/CartProvider'
+import { HeaderWithCartCount } from '@/components/layout/HeaderWithCartCount'
 import { Footer } from '@/components/layout/Footer'
 import './globals.css'
 
@@ -24,14 +25,16 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${poppins.variable} h-full`}>
       <body className="flex min-h-full flex-col font-sans antialiased">
-        <a href="#main-content" className="sr-only focus:not-sr-only">
-          Saltar al contenido
-        </a>
-        <Header cartCount={0} />
-        <main id="main-content" className="flex-1">
-          {children}
-        </main>
-        <Footer />
+        <CartProvider>
+          <a href="#main-content" className="sr-only focus:not-sr-only">
+            Saltar al contenido
+          </a>
+          <HeaderWithCartCount />
+          <main id="main-content" className="flex-1">
+            {children}
+          </main>
+          <Footer />
+        </CartProvider>
       </body>
     </html>
   )
