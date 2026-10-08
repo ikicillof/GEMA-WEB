@@ -47,8 +47,8 @@ tilde usando `superpowers:subagent-driven-development`.
   1 ronda de fix: landmark `<main>` anidado — hallazgo que resultó
   sistémico y se corrigió preventivamente en el texto del plan para las
   Tareas 10, 12, 13, 15, 18 y 19 antes de ejecutarlas)*
-- [ ] **Tarea 9 — Lógica de filtrado y orden del listado.** `sortProducts`
-  por precio/nombre.
+- [x] **Tarea 9 — Lógica de filtrado y orden del listado.** `sortProducts`
+  por precio/nombre. *(commits `1fa87029..09dd1a18`; sin rondas de fix)*
 - [ ] **Tarea 10 — Página de listado por categoría.** Grilla + filtro +
   orden, 404 para categoría inexistente.
 - [ ] **Tarea 11 — Estado del carrito.** Reducer + persistencia en
