@@ -7,7 +7,9 @@ export function loadCart(): CartState {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
     if (!raw) return EMPTY_CART
-    return JSON.parse(raw) as CartState
+    const parsed = JSON.parse(raw)
+    if (!parsed || !Array.isArray(parsed.items)) return EMPTY_CART
+    return parsed as CartState
   } catch {
     return EMPTY_CART
   }

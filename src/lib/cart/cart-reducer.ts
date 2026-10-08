@@ -39,5 +39,7 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
     }
     case 'CLEAR':
       return { items: [] }
+    case 'HYDRATE':
+      return action.state
   }
 }

@@ -21,4 +21,9 @@ describe('cart storage', () => {
     localStorage.setItem('gemma_cart_v1', 'not-json')
     expect(loadCart()).toEqual(EMPTY_CART)
   })
+
+  it('returns an empty cart if the stored value has invalid shape', () => {
+    localStorage.setItem('gemma_cart_v1', JSON.stringify({ foo: 1 }))
+    expect(loadCart()).toEqual(EMPTY_CART)
+  })
 })

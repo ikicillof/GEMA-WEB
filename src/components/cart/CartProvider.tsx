@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useReducer, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useReducer, useRef, type ReactNode } from 'react'
 import { cartReducer } from '@/lib/cart/cart-reducer'
 import { loadCart, saveCart } from '@/lib/cart/cart-storage'
 import { EMPTY_CART, type CartItem } from '@/lib/cart/cart-types'
@@ -16,9 +16,20 @@ type CartContextValue = {
 const CartContext = createContext<CartContextValue | null>(null)
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(cartReducer, EMPTY_CART, loadCart)
+  const [state, dispatch] = useReducer(cartReducer, EMPTY_CART)
+  const isFirstRender = useRef(true)
 
+  // Hydrate cart from localStorage on mount (client-side only)
   useEffect(() => {
+    dispatch({ type: 'HYDRATE', state: loadCart() })
+  }, [])
+
+  // Save cart to localStorage on state changes, but skip the first render
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
     saveCart(state)
   }, [state])
 

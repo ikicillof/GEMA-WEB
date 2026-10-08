@@ -61,4 +61,11 @@ describe('cartReducer', () => {
     const withItem = cartReducer(EMPTY_CART, { type: 'ADD_ITEM', item: lumalee })
     expect(cartReducer(withItem, { type: 'CLEAR' })).toEqual(EMPTY_CART)
   })
+
+  it('hydrates the cart with a different state', () => {
+    const withItem = cartReducer(EMPTY_CART, { type: 'ADD_ITEM', item: lumalee })
+    const differentState = { items: [{ ...lumalee, quantity: 5 }] }
+    const hydrated = cartReducer(withItem, { type: 'HYDRATE', state: differentState })
+    expect(hydrated).toEqual(differentState)
+  })
 })

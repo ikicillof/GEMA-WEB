@@ -17,5 +17,6 @@ export type CartAction =
   | { type: 'REMOVE_ITEM'; productId: string; color: string }
   | { type: 'UPDATE_QUANTITY'; productId: string; color: string; quantity: number }
   | { type: 'CLEAR' }
+  | { type: 'HYDRATE'; state: CartState }
 
 export const EMPTY_CART: CartState = { items: [] }
