@@ -32,8 +32,8 @@ export function createSupabaseOrdersRepository(client: SupabaseClient): OrdersRe
         customerEmail: input.customerEmail,
         address: input.address,
         total: data.total,
-        paymentStatus: data.payment_status,
-        shippingStatus: data.shipping_status,
+        paymentStatus: 'pendiente',
+        shippingStatus: 'a_confirmar',
         createdAt: data.created_at,
       }
     },
