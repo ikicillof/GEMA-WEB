@@ -1,3 +1,6 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import type { CartItem } from '@/lib/cart/cart-types'
 import { formatCurrencyARS } from '@/lib/format'
 
@@ -10,6 +13,22 @@ export function CartItemRow({
   onUpdateQuantity: (quantity: number) => void
   onRemove: () => void
 }) {
+  const [draft, setDraft] = useState(String(item.quantity))
+
+  // Sync draft when item.quantity changes (after parent commits update)
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDraft(String(item.quantity))
+  }, [item.quantity])
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value
+    setDraft(raw)
+    const parsed = Number(raw)
+    if (raw === '' || !Number.isFinite(parsed)) return
+    onUpdateQuantity(Math.max(1, Math.round(parsed)))
+  }
+
   return (
     <div className="flex items-center gap-4 border-b border-secondary/20 py-4">
       <div>
@@ -20,12 +39,17 @@ export function CartItemRow({
       <input
         type="number"
         min={1}
-        value={item.quantity}
+        value={draft}
         aria-label={`Cantidad de ${item.name}`}
-        onChange={(e) => onUpdateQuantity(Number(e.target.value))}
+        onChange={handleChange}
         className="w-16 rounded-md bg-[#17171A] px-2 py-1 text-center"
       />
-      <button type="button" onClick={onRemove} className="text-sm underline">
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Quitar ${item.name} (${item.color})`}
+        className="text-sm underline"
+      >
         Quitar
       </button>
     </div>
