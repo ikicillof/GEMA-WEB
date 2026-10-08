@@ -3299,7 +3299,7 @@ import {
   parseWebhookPayload,
   mapMercadoPagoStatusToOrderStatus,
 } from '@/lib/mercadopago'
-import { createInMemoryOrdersRepository, type OrdersRepository } from '@/lib/orders'
+import type { OrdersRepository } from '@/lib/orders'
 import { createSupabaseOrdersRepository } from '@/lib/orders/supabase-orders-repository'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
@@ -3483,7 +3483,13 @@ export function PaymentMethodSelect({
 
 Modify `src/app/checkout/page.tsx` — agregar, dentro del bloque `else` que hoy muestra el texto temporal ("Zona seleccionada..."), el paso de medio de pago y la confirmación:
 ```tsx
-// agregar al import existente de 'next/navigation'/etc:
+// agregar a los imports existentes en la parte de arriba del archivo (Tarea 15):
+import { canStartCheckout, findUnavailableItems } from '@/lib/checkout/guards' // ya existía canStartCheckout; sumar findUnavailableItems al mismo import
+import { getAllProducts } from '@/lib/catalog'
+import { createOrderFromCart, createInMemoryOrdersRepository } from '@/lib/orders'
+import { TransferInstructions } from '@/components/checkout/TransferInstructions'
+import { PaymentMethodSelect } from '@/components/checkout/PaymentMethodSelect'
+import type { PaymentMethod } from '@/types/order'
 import { confirmMercadoPagoOrder } from './actions'
 
 // agregar al estado del componente:
@@ -3870,7 +3876,48 @@ export default async function Page({
 }
 ```
 
-- [ ] **Step 5: Tests del sitemap**
+- [ ] **Step 5: Agregar `generateMetadata` a la página de categoría**
+
+Modify `src/app/categoria/[slug]/page.tsx` (agregar el export, antes de `Page`):
+```tsx
+import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
+import { getCategoryBySlug, getProductsByCategory } from '@/lib/catalog'
+import { CategoryListingView } from '@/components/catalog/CategoryListingView'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const category = getCategoryBySlug(slug)
+  if (!category) return {}
+  return {
+    title: `${category.name} — Gemma`,
+    description: `Descubrí ${category.name.toLowerCase()} con la personalidad de Gemma.`,
+  }
+}
+
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  const category = getCategoryBySlug(slug)
+
+  if (!category) {
+    notFound()
+  }
+
+  const products = getProductsByCategory(slug)
+
+  return <CategoryListingView category={category} products={products} />
+}
+```
+
+- [ ] **Step 6: Tests del sitemap**
 
 Create `src/lib/seo/sitemap.test.ts`:
 ```ts
@@ -3904,7 +3951,7 @@ describe('buildSitemapEntries', () => {
 })
 ```
 
-- [ ] **Step 6: Run (fail) → implementar**
+- [ ] **Step 7: Run (fail) → implementar**
 
 Run: `npm test -- src/lib/seo/sitemap.test.ts` → FAIL
 
@@ -3927,11 +3974,11 @@ export function buildSitemapEntries(
 }
 ```
 
-- [ ] **Step 7: Run (pass)**
+- [ ] **Step 8: Run (pass)**
 
 Run: `npm test -- src/lib/seo/sitemap.test.ts` → PASS (1 test)
 
-- [ ] **Step 8: Conectar `app/sitemap.ts`**
+- [ ] **Step 9: Conectar `app/sitemap.ts`**
 
 Create `src/app/sitemap.ts`:
 ```ts
@@ -3946,7 +3993,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 }
 ```
 
-- [ ] **Step 9: Verificar manualmente y commit**
+- [ ] **Step 10: Verificar manualmente y commit**
 
 Run: `npm run dev` → visitar `/sitemap.xml` y `/producto/lampara-lumalee` (ver `<script type="application/ld+json">` en el HTML fuente).
 
