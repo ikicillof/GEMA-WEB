@@ -32,6 +32,7 @@ export function CategoryListingView({
         <h1 className="text-2xl font-semibold">{category.name}</h1>
         <SortSelect value={sort} onChange={setSort} />
       </div>
+      <h2 className="sr-only">Productos</h2>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         {sorted.map((product) => (
           <ProductCard key={product.id} product={product} />

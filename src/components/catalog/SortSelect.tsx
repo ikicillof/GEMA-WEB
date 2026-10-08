@@ -1,5 +1,3 @@
-'use client'
-
 import type { SortOption } from '@/lib/catalog-filters'
 
 export function SortSelect({
