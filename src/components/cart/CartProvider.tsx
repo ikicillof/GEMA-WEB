@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useReducer, useRef, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useReducer, useRef, type ReactNode } from 'react'
 import { cartReducer } from '@/lib/cart/cart-reducer'
 import { loadCart, saveCart } from '@/lib/cart/cart-storage'
 import { EMPTY_CART, type CartItem } from '@/lib/cart/cart-types'
@@ -33,14 +33,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     saveCart(state)
   }, [state])
 
-  const value: CartContextValue = {
-    items: state.items,
-    addItem: (item) => dispatch({ type: 'ADD_ITEM', item }),
-    removeItem: (productId, color) => dispatch({ type: 'REMOVE_ITEM', productId, color }),
-    updateQuantity: (productId, color, quantity) =>
-      dispatch({ type: 'UPDATE_QUANTITY', productId, color, quantity }),
-    clear: () => dispatch({ type: 'CLEAR' }),
-  }
+  const value = useMemo<CartContextValue>(
+    () => ({
+      items: state.items,
+      addItem: (item) => dispatch({ type: 'ADD_ITEM', item }),
+      removeItem: (productId, color) => dispatch({ type: 'REMOVE_ITEM', productId, color }),
+      updateQuantity: (productId, color, quantity) =>
+        dispatch({ type: 'UPDATE_QUANTITY', productId, color, quantity }),
+      clear: () => dispatch({ type: 'CLEAR' }),
+    }),
+    [state.items]
+  )
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>
 }
