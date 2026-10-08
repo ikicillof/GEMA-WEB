@@ -60,8 +60,13 @@ tilde usando `superpowers:subagent-driven-development`.
   visitante con carrito guardado hidrate distinto al HTML del server;
   se agregó acción `HYDRATE` + guarda de primer render, y validación de
   forma del JSON persistido)*
-- [ ] **Tarea 12 — Ficha de producto.** Galería, selector de color, precio
-  normal + badge de transferencia, agregar al carrito.
+- [x] **Tarea 12 — Ficha de producto.** Galería, selector de color, precio
+  normal + badge de transferencia, agregar al carrito. *(commits
+  `f3392e9a..bfff499b`; 1 ronda de fix: selector de color sin
+  navegación por teclado (se cambió a `<input type="radio">` nativo),
+  `sizes`/`priority`/`alt` en la galería de imágenes; el primer intento
+  del fix perdió el aria-label de accesibilidad para no romper un test
+  — lo restauré yo mismo ajustando el test a un regex parcial)*
 - [ ] **Tarea 13 — Página de carrito.** Editar cantidad, quitar, total.
 - [ ] **Tarea 14 — Guardas de checkout.** Carrito vacío, disponibilidad
   stale (producto agotado después de agregado).
