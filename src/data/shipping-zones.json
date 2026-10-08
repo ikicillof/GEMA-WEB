@@ -1,0 +1,5 @@
+[
+  { "id": "caba", "name": "CABA", "rate": 3500, "order": 1 },
+  { "id": "resto-pais", "name": "Resto del país (Correo Argentino)", "rate": 5500, "order": 2 },
+  { "id": "retiro-vicente-lopez", "name": "Retiro en Vicente López", "rate": 0, "order": 3 }
+]
