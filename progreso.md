@@ -75,8 +75,11 @@ tilde usando `superpowers:subagent-driven-development`.
   "eliminar"; también se perdió cobertura de test del total al
   cambiarla por mocks aislados, se restauró como test de integración
   real)*
-- [ ] **Tarea 14 — Guardas de checkout.** Carrito vacío, disponibilidad
-  stale (producto agotado después de agregado).
+- [x] **Tarea 14 — Guardas de checkout.** Carrito vacío, disponibilidad
+  stale (producto agotado después de agregado). *(commits
+  `2689ea77..84b8896f`; sin rondas de fix — se corrigió una omisión del
+  brief que solo chequeaba disponibilidad por color, no la del
+  producto completo)*
 - [ ] **Tarea 15 — Auth gate en checkout (Supabase) + zona de envío.**
   Login/registro exigido solo al pagar.
 - [ ] **Tarea 16 — Pedidos.** Tipos, repositorio (in-memory + Supabase),
