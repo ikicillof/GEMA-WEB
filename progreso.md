@@ -53,8 +53,13 @@ tilde usando `superpowers:subagent-driven-development`.
   orden, 404 para categoría inexistente. *(commits `a5f564b8..60d20c93`;
   1 ronda de fix: salto de jerarquía de encabezados h1→h3, test
   automático del 404, `'use client'` redundante en `SortSelect`)*
-- [ ] **Tarea 11 — Estado del carrito.** Reducer + persistencia en
-  localStorage + `CartProvider`/`useCart`.
+- [x] **Tarea 11 — Estado del carrito.** Reducer + persistencia en
+  localStorage + `CartProvider`/`useCart`. *(commits `defc7d4e..20a4f81a`;
+  1 ronda de fix: los 3 revisores encontraron el mismo bug real de
+  hidratación — `loadCart` como lazy-init de `useReducer` hacía que un
+  visitante con carrito guardado hidrate distinto al HTML del server;
+  se agregó acción `HYDRATE` + guarda de primer render, y validación de
+  forma del JSON persistido)*
 - [ ] **Tarea 12 — Ficha de producto.** Galería, selector de color, precio
   normal + badge de transferencia, agregar al carrito.
 - [ ] **Tarea 13 — Página de carrito.** Editar cantidad, quitar, total.
