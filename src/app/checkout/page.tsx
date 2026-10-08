@@ -14,31 +14,42 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { items } = useCart()
+  const { items, isHydrated } = useCart()
   const [zoneId, setZoneId] = useState(getShippingZones()[0]?.id ?? '')
   const [address, setAddress] = useState('')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [customerEmail, setCustomerEmail] = useState<string | null>(null)
   const [checkedAuth, setCheckedAuth] = useState(false)
+  const [authError, setAuthError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!canStartCheckout(items)) {
+    if (isHydrated && !canStartCheckout(items)) {
       router.replace('/carrito')
     }
-  }, [items, router])
+  }, [items, isHydrated, router])
 
   useEffect(() => {
+    let isMounted = true
     createSupabaseBrowserClient()
       .auth.getUser()
       .then(({ data }) => {
+        if (!isMounted) return
         setIsAuthenticated(Boolean(data.user))
         setCustomerEmail(data.user?.email ?? null)
         setCheckedAuth(true)
       })
+      .catch(() => {
+        if (!isMounted) return
+        setAuthError('No pudimos verificar tu sesión. Recargá la página para reintentar.')
+        setCheckedAuth(true)
+      })
+    return () => {
+      isMounted = false
+    }
   }, [])
 
+  if (!isHydrated || !checkedAuth) return <p className="px-4 py-10">Cargando...</p>
   if (!canStartCheckout(items)) return null
-  if (!checkedAuth) return <p className="px-4 py-10">Cargando...</p>
 
   const unavailableItems = findUnavailableItems(items, getAllProducts())
 
@@ -63,6 +74,11 @@ export default function CheckoutPage() {
   return (
     <div className="px-4 py-10 md:px-10">
       <h1 className="mb-6 text-2xl font-semibold">Checkout</h1>
+      {authError && (
+        <p role="alert" className="mb-4 text-sm text-primary">
+          {authError}
+        </p>
+      )}
       <label className="mb-6 block">
         <span className="mb-2 block font-semibold">Dirección de entrega</span>
         <input

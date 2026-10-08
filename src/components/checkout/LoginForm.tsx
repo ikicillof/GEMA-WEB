@@ -12,38 +12,49 @@ export function LoginForm({
   const [code, setCode] = useState('')
   const [codeSent, setCodeSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
 
   async function handleSendCode(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
-    const supabase = createSupabaseBrowserClient()
-    const { error: sendError } = await supabase.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: true },
-    })
-    if (sendError) {
-      setError('No pudimos enviarte el código. Probá de nuevo.')
-      return
+    setPending(true)
+    try {
+      const supabase = createSupabaseBrowserClient()
+      const { error: sendError } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: true },
+      })
+      if (sendError) {
+        setError('No pudimos enviarte el código. Probá de nuevo.')
+        return
+      }
+      setCodeSent(true)
+    } finally {
+      setPending(false)
     }
-    setCodeSent(true)
   }
 
   async function handleVerifyCode(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
-    const supabase = createSupabaseBrowserClient()
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      email,
-      token: code,
-      type: 'email',
-    })
-    if (verifyError) {
-      setError('Ese código no es válido o venció. Pedí uno nuevo.')
-      return
+    setPending(true)
+    try {
+      const supabase = createSupabaseBrowserClient()
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email,
+        token: code,
+        type: 'email',
+      })
+      if (verifyError) {
+        setError('Ese código no es válido o venció. Pedí uno nuevo.')
+        return
+      }
+      // La sesión queda confirmada recién acá, después de validar el código —
+      // nunca al solo enviarlo (ver Review Focus: no asumir login sin verificar).
+      onAuthenticated(email)
+    } finally {
+      setPending(false)
     }
-    // La sesión queda confirmada recién acá, después de validar el código —
-    // nunca al solo enviarlo (ver Review Focus: no asumir login sin verificar).
-    onAuthenticated(email)
   }
 
   if (!codeSent) {
@@ -53,17 +64,23 @@ export function LoginForm({
         <input
           type="email"
           required
+          aria-label="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="tu@email.com"
           className="rounded-md bg-[#17171A] px-3 py-2"
         />
-        {error && <p className="text-sm text-primary">{error}</p>}
+        {error && (
+          <p role="alert" className="text-sm text-primary">
+            {error}
+          </p>
+        )}
         <button
           type="submit"
-          className="rounded-full bg-primary px-7 py-3.5 font-semibold text-text"
+          disabled={pending}
+          className="rounded-full bg-primary px-7 py-3.5 font-semibold text-text disabled:opacity-60"
         >
-          Enviarme el código para pagar
+          {pending ? 'Enviando...' : 'Enviarme el código para pagar'}
         </button>
       </form>
     )
@@ -76,17 +93,23 @@ export function LoginForm({
         type="text"
         inputMode="numeric"
         required
+        aria-label="Código de verificación"
         value={code}
         onChange={(e) => setCode(e.target.value)}
         placeholder="123456"
         className="rounded-md bg-[#17171A] px-3 py-2"
       />
-      {error && <p className="text-sm text-primary">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-primary">
+          {error}
+        </p>
+      )}
       <button
         type="submit"
-        className="rounded-full bg-primary px-7 py-3.5 font-semibold text-text"
+        disabled={pending}
+        className="rounded-full bg-primary px-7 py-3.5 font-semibold text-text disabled:opacity-60"
       >
-        Confirmar código
+        {pending ? 'Enviando...' : 'Confirmar código'}
       </button>
     </form>
   )

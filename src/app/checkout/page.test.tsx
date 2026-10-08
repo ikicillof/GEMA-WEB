@@ -5,8 +5,10 @@ import { CartProvider } from '@/components/cart/CartProvider'
 import * as cartStorage from '@/lib/cart/cart-storage'
 import * as supabaseClient from '@/lib/supabase/client'
 
+const { replaceMock } = vi.hoisted(() => ({ replaceMock: vi.fn() }))
+
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ replace: vi.fn() }),
+  useRouter: () => ({ replace: replaceMock }),
 }))
 
 vi.mock('@/lib/supabase/client', () => ({
@@ -94,5 +96,25 @@ describe('CheckoutPage', () => {
       expect(screen.getByText(/paso de medio de pago/i)).toBeInTheDocument()
     )
     expect(screen.queryByText(/Enviarme el código para pagar/i)).not.toBeInTheDocument()
+  })
+
+  it('never redirects to /carrito when the cart hydrates with real items (hydration race regression)', async () => {
+    // Regression for the hydration race: CartProvider starts at EMPTY_CART and only
+    // loads the real cart inside its own mount effect. Before the isHydrated guard,
+    // CheckoutPage's redirect effect ran with items === [] on the very first check and
+    // sent a shopper with a non-empty cart back to /carrito.
+    vi.spyOn(cartStorage, 'loadCart').mockReturnValue({ items: [availableItem] })
+    mockAuth(null)
+
+    render(
+      <CartProvider>
+        <Page />
+      </CartProvider>
+    )
+
+    // Wait for the page to finish hydrating and rendering the real checkout content.
+    expect(await screen.findByText(/Zona de envío/i)).toBeInTheDocument()
+
+    expect(replaceMock).not.toHaveBeenCalledWith('/carrito')
   })
 })

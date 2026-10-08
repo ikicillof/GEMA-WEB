@@ -1,12 +1,22 @@
 'use client'
 
-import { createContext, useContext, useEffect, useMemo, useReducer, useRef, type ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import { cartReducer } from '@/lib/cart/cart-reducer'
 import { loadCart, saveCart } from '@/lib/cart/cart-storage'
 import { EMPTY_CART, type CartItem } from '@/lib/cart/cart-types'
 
 type CartContextValue = {
   items: CartItem[]
+  isHydrated: boolean
   addItem: (item: CartItem) => void
   removeItem: (productId: string, color: string) => void
   updateQuantity: (productId: string, color: string, quantity: number) => void
@@ -18,10 +28,13 @@ const CartContext = createContext<CartContextValue | null>(null)
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, EMPTY_CART)
   const isFirstRender = useRef(true)
+  const [isHydrated, setIsHydrated] = useState(false)
 
   // Hydrate cart from localStorage on mount (client-side only)
   useEffect(() => {
     dispatch({ type: 'HYDRATE', state: loadCart() })
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsHydrated(true)
   }, [])
 
   // Save cart to localStorage on state changes, but skip the first render
@@ -36,13 +49,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const value = useMemo<CartContextValue>(
     () => ({
       items: state.items,
+      isHydrated,
       addItem: (item) => dispatch({ type: 'ADD_ITEM', item }),
       removeItem: (productId, color) => dispatch({ type: 'REMOVE_ITEM', productId, color }),
       updateQuantity: (productId, color, quantity) =>
         dispatch({ type: 'UPDATE_QUANTITY', productId, color, quantity }),
       clear: () => dispatch({ type: 'CLEAR' }),
     }),
-    [state.items]
+    [state.items, isHydrated]
   )
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>
