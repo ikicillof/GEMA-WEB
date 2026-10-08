@@ -5,7 +5,7 @@ import { TrustBannerRow } from '@/components/ui/TrustBannerRow'
 
 export function HomeView({ featuredProducts }: { featuredProducts: Product[] }) {
   return (
-    <main>
+    <div>
       <Hero />
       <div className="px-4 md:px-10">
         <TrustBannerRow
@@ -18,6 +18,6 @@ export function HomeView({ featuredProducts }: { featuredProducts: Product[] }) 
         />
       </div>
       <FeaturedProducts products={featuredProducts} />
-    </main>
+    </div>
   )
 }
