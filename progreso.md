@@ -49,8 +49,10 @@ tilde usando `superpowers:subagent-driven-development`.
   Tareas 10, 12, 13, 15, 18 y 19 antes de ejecutarlas)*
 - [x] **Tarea 9 — Lógica de filtrado y orden del listado.** `sortProducts`
   por precio/nombre. *(commits `1fa87029..09dd1a18`; sin rondas de fix)*
-- [ ] **Tarea 10 — Página de listado por categoría.** Grilla + filtro +
-  orden, 404 para categoría inexistente.
+- [x] **Tarea 10 — Página de listado por categoría.** Grilla + filtro +
+  orden, 404 para categoría inexistente. *(commits `a5f564b8..60d20c93`;
+  1 ronda de fix: salto de jerarquía de encabezados h1→h3, test
+  automático del 404, `'use client'` redundante en `SortSelect`)*
 - [ ] **Tarea 11 — Estado del carrito.** Reducer + persistencia en
   localStorage + `CartProvider`/`useCart`.
 - [ ] **Tarea 12 — Ficha de producto.** Galería, selector de color, precio
