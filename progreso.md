@@ -90,8 +90,11 @@ tilde usando `superpowers:subagent-driven-development`.
   revirtiéndolo y confirmando que el test de regresión falla sin él.
   Nota: el login real todavía no funciona end-to-end porque no hay un
   proyecto Supabase conectado — ver sección de abajo)*
-- [ ] **Tarea 16 — Pedidos.** Tipos, repositorio (in-memory + Supabase),
-  `createOrderFromCart`.
+- [x] **Tarea 16 — Pedidos.** Tipos, repositorio (in-memory + Supabase),
+  `createOrderFromCart`. *(commits `a6fc51d5..8b427f48`; 1 ronda de fix
+  + 1 ajuste mío: el repositorio Supabase confiaba en el round-trip sin
+  tipar de la base para campos que ya conocía de antemano — corregido
+  en ambos métodos)*
 - [ ] **Tarea 17 — Mercado Pago.** Preferencia de pago + webhook idempotente.
 - [ ] **Tarea 18 — Transferencia/efectivo + confirmación de pedido.**
   Server Action de Mercado Pago, flujo completo de checkout.
