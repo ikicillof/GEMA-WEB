@@ -67,7 +67,14 @@ tilde usando `superpowers:subagent-driven-development`.
   `sizes`/`priority`/`alt` en la galería de imágenes; el primer intento
   del fix perdió el aria-label de accesibilidad para no romper un test
   — lo restauré yo mismo ajustando el test a un regex parcial)*
-- [ ] **Tarea 13 — Página de carrito.** Editar cantidad, quitar, total.
+- [x] **Tarea 13 — Página de carrito.** Editar cantidad, quitar, total +
+  total por transferencia. *(commits `c946926f..31edd73f`; 1 ronda de
+  fix: los 3 revisores encontraron el mismo bug real — vaciar el campo
+  de cantidad para reescribirla borraba el ítem sin confirmación
+  porque `Number('')` es `0` y el reducer trata cantidad ≤0 como
+  "eliminar"; también se perdió cobertura de test del total al
+  cambiarla por mocks aislados, se restauró como test de integración
+  real)*
 - [ ] **Tarea 14 — Guardas de checkout.** Carrito vacío, disponibilidad
   stale (producto agotado después de agregado).
 - [ ] **Tarea 15 — Auth gate en checkout (Supabase) + zona de envío.**
