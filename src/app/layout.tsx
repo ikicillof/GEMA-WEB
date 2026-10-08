@@ -24,8 +24,13 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${poppins.variable} h-full`}>
       <body className="flex min-h-full flex-col font-sans antialiased">
+        <a href="#main-content" className="sr-only focus:not-sr-only">
+          Saltar al contenido
+        </a>
         <Header cartCount={0} />
-        {children}
+        <main id="main-content" className="flex-1">
+          {children}
+        </main>
         <Footer />
       </body>
     </html>

@@ -6,9 +6,9 @@ export function Header({ cartCount }: { cartCount: number }) {
       <Link href="/" className="font-semibold">
         Gemma
       </Link>
-      <nav className="flex items-center gap-4 text-sm">
+      <nav aria-label="Principal" className="flex items-center gap-4 text-sm">
         <Link href="/categoria/lamparas">Categorías</Link>
-        <Link href="/carrito" className="relative" aria-label="Carrito">
+        <Link href="/carrito" className="relative" aria-label={cartCount > 0 ? `Carrito, ${cartCount} artículos` : 'Carrito'}>
           🛍
           {cartCount > 0 && (
             <span

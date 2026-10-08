@@ -21,4 +21,14 @@ describe('Header', () => {
     render(<Header cartCount={0} />)
     expect(screen.queryByTestId('cart-count')).not.toBeInTheDocument()
   })
+
+  it('includes the cart count in the accessible name when items are present', () => {
+    render(<Header cartCount={3} />)
+    expect(screen.getByRole('link', { name: 'Carrito, 3 artículos' })).toBeInTheDocument()
+  })
+
+  it('uses a plain accessible name when the cart is empty', () => {
+    render(<Header cartCount={0} />)
+    expect(screen.getByRole('link', { name: 'Carrito' })).toBeInTheDocument()
+  })
 })
