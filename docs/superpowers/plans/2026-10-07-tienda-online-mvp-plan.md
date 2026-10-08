@@ -1317,7 +1317,7 @@ import { TrustBannerRow } from '@/components/ui/TrustBannerRow'
 
 export function HomeView({ featuredProducts }: { featuredProducts: Product[] }) {
   return (
-    <main>
+    <div>
       <Hero />
       <div className="px-4 md:px-10">
         <TrustBannerRow
@@ -1330,7 +1330,7 @@ export function HomeView({ featuredProducts }: { featuredProducts: Product[] }) 
         />
       </div>
       <FeaturedProducts products={featuredProducts} />
-    </main>
+    </div>
   )
 }
 ```
@@ -1558,17 +1558,17 @@ export function CategoryListingView({
 
   if (products.length === 0) {
     return (
-      <main className="px-4 py-10 md:px-10">
+      <div className="px-4 py-10 md:px-10">
         <h1 className="mb-4 text-2xl font-semibold">{category.name}</h1>
         <p>Todavía no hay productos en esta categoría.</p>
-      </main>
+      </div>
     )
   }
 
   const sorted = sortProducts(products, sort)
 
   return (
-    <main className="px-4 py-10 md:px-10">
+    <div className="px-4 py-10 md:px-10">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">{category.name}</h1>
         <SortSelect value={sort} onChange={setSort} />
@@ -1578,7 +1578,7 @@ export function CategoryListingView({
           <ProductCard key={product.id} product={product} />
         ))}
       </div>
-    </main>
+    </div>
   )
 }
 ```
@@ -2084,7 +2084,7 @@ export function ProductDetailView({ product }: { product: Product }) {
   const { addItem } = useCart()
 
   return (
-    <main className="grid gap-6 px-4 py-10 md:grid-cols-2 md:px-10">
+    <div className="grid gap-6 px-4 py-10 md:grid-cols-2 md:px-10">
       <div className="grid gap-3">
         {product.photos.map((photo) => (
           <div key={photo} className="relative aspect-square overflow-hidden rounded-lg">
@@ -2124,7 +2124,7 @@ export function ProductDetailView({ product }: { product: Product }) {
           {selectedColor.available ? 'Agregar al carrito' : 'Agotado en este color'}
         </Button>
       </div>
-    </main>
+    </div>
   )
 }
 ```
@@ -2291,19 +2291,19 @@ export function CartView() {
 
   if (items.length === 0) {
     return (
-      <main className="px-4 py-10 text-center md:px-10">
+      <div className="px-4 py-10 text-center md:px-10">
         <p className="mb-4">Todavía no agregaste nada a tu carrito.</p>
         <Link href="/" className="underline">
           Ver productos
         </Link>
-      </main>
+      </div>
     )
   }
 
   const total = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
 
   return (
-    <main className="px-4 py-10 md:px-10">
+    <div className="px-4 py-10 md:px-10">
       <h1 className="mb-6 text-2xl font-semibold">Tu carrito</h1>
       {items.map((item) => (
         <CartItemRow
@@ -2320,7 +2320,7 @@ export function CartView() {
       >
         Ir a pagar
       </Link>
-    </main>
+    </div>
   )
 }
 ```
@@ -2771,7 +2771,7 @@ export default function CheckoutPage() {
   const requiresAuth = shouldRequireAuth('payment', isAuthenticated)
 
   return (
-    <main className="px-4 py-10 md:px-10">
+    <div className="px-4 py-10 md:px-10">
       <h1 className="mb-6 text-2xl font-semibold">Checkout</h1>
       <label className="mb-6 block">
         <span className="mb-2 block font-semibold">Dirección de entrega</span>
@@ -2799,7 +2799,7 @@ export default function CheckoutPage() {
           Zona seleccionada: {zoneId}. (El paso de medio de pago se agrega en la Tarea 17.)
         </p>
       )}
-    </main>
+    </div>
   )
 }
 ```
@@ -3610,7 +3610,7 @@ Create `src/app/arrepentimiento/page.tsx`:
 ```tsx
 export default function Page() {
   return (
-    <main className="px-4 py-10 md:px-10">
+    <div className="px-4 py-10 md:px-10">
       <h1 className="mb-4 text-2xl font-semibold">Botón de arrepentimiento</h1>
       <p className="mb-4">
         Como compradora, tenés derecho a arrepentirte de tu compra dentro de
@@ -3626,7 +3626,7 @@ export default function Page() {
         indicando el número de pedido. Te confirmamos la cancelación y te
         contamos cómo seguir con la devolución.
       </p>
-    </main>
+    </div>
   )
 }
 ```
@@ -3637,7 +3637,7 @@ Create `src/app/contacto/page.tsx`:
 ```tsx
 export default function Page() {
   return (
-    <main className="px-4 py-10 md:px-10">
+    <div className="px-4 py-10 md:px-10">
       <h1 className="mb-4 text-2xl font-semibold">Contacto</h1>
       <p>
         ¿Tenés una pregunta sobre tu pedido o sobre algún producto? Escribinos
@@ -3647,7 +3647,7 @@ export default function Page() {
         </a>
         . Te respondemos a la brevedad 💌
       </p>
-    </main>
+    </div>
   )
 }
 ```
@@ -3656,7 +3656,7 @@ Create `src/app/envios-y-pagos/page.tsx`:
 ```tsx
 export default function Page() {
   return (
-    <main className="px-4 py-10 md:px-10">
+    <div className="px-4 py-10 md:px-10">
       <h1 className="mb-4 text-2xl font-semibold">Envíos y pagos</h1>
       <section className="mb-6">
         <h2 className="mb-2 text-lg font-semibold">Envíos</h2>
@@ -3672,7 +3672,7 @@ export default function Page() {
           efectivo — estas dos últimas con 10% de descuento.
         </p>
       </section>
-    </main>
+    </div>
   )
 }
 ```
@@ -3698,7 +3698,7 @@ const faqs = [
 
 export default function Page() {
   return (
-    <main className="px-4 py-10 md:px-10">
+    <div className="px-4 py-10 md:px-10">
       <h1 className="mb-6 text-2xl font-semibold">Preguntas frecuentes</h1>
       <dl>
         {faqs.map((faq) => (
@@ -3708,7 +3708,7 @@ export default function Page() {
           </div>
         ))}
       </dl>
-    </main>
+    </div>
   )
 }
 ```
