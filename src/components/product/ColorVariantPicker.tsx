@@ -14,14 +14,16 @@ export function ColorVariantPicker({
   return (
     <div role="radiogroup" aria-label="Color" className="flex gap-2">
       {colors.map((color) => (
-        <button
+        <input
           key={color.name}
-          type="button"
+          type="radio"
+          name="color"
           role="radio"
+          checked={selected.name === color.name}
           aria-checked={selected.name === color.name}
           aria-label={color.name}
-          onClick={() => onSelect(color)}
-          className={`h-8 w-8 rounded-full border-2 ${
+          onChange={() => onSelect(color)}
+          className={`h-8 w-8 appearance-none rounded-full border-2 ${
             selected.name === color.name ? 'border-primary' : 'border-text/30'
           } ${color.available ? '' : 'opacity-40'}`}
           style={{ backgroundColor: color.hex }}

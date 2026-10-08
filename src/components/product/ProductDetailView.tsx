@@ -16,9 +16,16 @@ export function ProductDetailView({ product }: { product: Product }) {
   return (
     <div className="grid gap-6 px-4 py-10 md:grid-cols-2 md:px-10">
       <div className="grid gap-3">
-        {product.photos.map((photo) => (
+        {product.photos.map((photo, index) => (
           <div key={photo} className="relative aspect-square overflow-hidden rounded-lg">
-            <Image src={photo} alt={product.name} fill className="object-cover" />
+            <Image
+              src={photo}
+              alt={`${product.name} - foto ${index + 1}`}
+              fill
+              sizes="(min-width: 768px) 50vw, 100vw"
+              priority={index === 0}
+              className="object-cover"
+            />
           </div>
         ))}
       </div>
