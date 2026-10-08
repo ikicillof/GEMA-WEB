@@ -21,7 +21,7 @@ export function ColorVariantPicker({
           role="radio"
           checked={selected.name === color.name}
           aria-checked={selected.name === color.name}
-          aria-label={color.name}
+          aria-label={color.available ? color.name : `${color.name} (no disponible)`}
           onChange={() => onSelect(color)}
           className={`h-8 w-8 appearance-none rounded-full border-2 ${
             selected.name === color.name ? 'border-primary' : 'border-text/30'

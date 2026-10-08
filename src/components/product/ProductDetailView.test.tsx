@@ -43,7 +43,7 @@ describe('ProductDetailView', () => {
         <ProductDetailView product={product} />
       </CartProvider>
     )
-    fireEvent.click(screen.getByRole('radio', { name: 'Amarillo' }))
+    fireEvent.click(screen.getByRole('radio', { name: /Amarillo/ }))
     expect(screen.getByRole('button', { name: /agregar al carrito/i })).toBeDisabled()
   })
 
