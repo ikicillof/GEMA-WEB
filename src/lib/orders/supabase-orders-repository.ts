@@ -21,7 +21,7 @@ export function createSupabaseOrdersRepository(client: SupabaseClient): OrdersRe
         .single()
 
       if (error || !data) {
-        throw new Error(`createOrder failed: ${error?.message}`)
+        throw new Error(`createOrder failed: ${error?.message ?? 'sin datos'}`)
       }
 
       return {
@@ -47,7 +47,7 @@ export function createSupabaseOrdersRepository(client: SupabaseClient): OrdersRe
         .single()
 
       if (error || !data) {
-        throw new Error(`updateOrderPaymentStatus failed: ${error?.message}`)
+        throw new Error(`updateOrderPaymentStatus failed: ${error?.message ?? 'sin datos'}`)
       }
 
       return {
@@ -58,7 +58,7 @@ export function createSupabaseOrdersRepository(client: SupabaseClient): OrdersRe
         customerEmail: data.customer_email,
         address: data.address,
         total: data.total,
-        paymentStatus: data.payment_status,
+        paymentStatus: status,
         shippingStatus: data.shipping_status,
         createdAt: data.created_at,
       }

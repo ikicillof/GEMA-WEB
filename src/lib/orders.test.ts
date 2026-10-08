@@ -45,4 +45,11 @@ describe('createOrderFromCart', () => {
     const repo = createInMemoryOrdersRepository()
     await expect(repo.updateOrderPaymentStatus('no-existe', 'pagado')).rejects.toThrow()
   })
+
+  it('rejects when the shipping zone is unknown', async () => {
+    const repo = createInMemoryOrdersRepository()
+    await expect(
+      createOrderFromCart(repo, { ...input, shippingZoneId: 'no-existe' })
+    ).rejects.toThrow()
+  })
 })
