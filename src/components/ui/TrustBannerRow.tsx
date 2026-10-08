@@ -1,9 +1,10 @@
-import { TrustBanner } from './TrustBanner'
+import type { ReactNode } from 'react'
+import { TrustBanner, type Tone } from './TrustBanner'
 
 type TrustBannerItem = {
-  icon: React.ReactNode
+  icon: ReactNode
   label: string
-  tone: 'rest' | 'cool' | 'warm'
+  tone: Tone
 }
 
 export function TrustBannerRow({ items }: { items: TrustBannerItem[] }) {

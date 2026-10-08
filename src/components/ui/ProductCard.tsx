@@ -15,6 +15,7 @@ export function ProductCard({ product }: { product: Product }) {
           src={product.photos[0]}
           alt={product.name}
           fill
+          sizes="(min-width: 768px) 25vw, 50vw"
           className="object-cover"
         />
       </div>
@@ -27,6 +28,7 @@ export function ProductCard({ product }: { product: Product }) {
             key={color.name}
             data-testid="color-swatch"
             title={color.name}
+            aria-label={`${color.name}${color.available ? '' : ' (agotado)'}`}
             className={`h-5 w-5 rounded-full border border-text/30 ${
               color.available ? '' : 'opacity-40'
             }`}

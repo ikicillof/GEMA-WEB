@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-type Tone = 'rest' | 'cool' | 'warm'
+export type Tone = 'rest' | 'cool' | 'warm'
 
 const toneClass: Record<Tone, string> = {
   rest: 'bg-rest text-bg',
@@ -21,7 +21,7 @@ export function TrustBanner({
     <li
       className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold shadow-[var(--shadow-sticker)] ${toneClass[tone]}`}
     >
-      <span>{icon}</span>
+      <span aria-hidden="true">{icon}</span>
       <span>{label}</span>
     </li>
   )

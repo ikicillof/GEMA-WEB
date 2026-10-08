@@ -40,4 +40,10 @@ describe('ProductCard', () => {
     expect(swatches).toHaveLength(2)
     expect(swatches[1]).toHaveClass('opacity-40')
   })
+
+  it('labels each color swatch with its name and availability for screen readers', () => {
+    render(<ProductCard product={product} />)
+    expect(screen.getByLabelText('Rosa Gemma')).toBeInTheDocument()
+    expect(screen.getByLabelText('Amarillo (agotado)')).toBeInTheDocument()
+  })
 })
