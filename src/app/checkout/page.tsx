@@ -16,6 +16,7 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { formatCurrencyARS } from '@/lib/format'
 import type { PaymentMethod } from '@/types/order'
 import { confirmMercadoPagoOrder, confirmCashOrTransferOrder, getCheckoutSummary } from './actions'
+import { LAST_ORDER_ID_KEY } from './confirmacion/ClearCartOnMount'
 
 export default function CheckoutPage() {
   return (
@@ -162,7 +163,14 @@ function CheckoutPageContent() {
     setIsConfirming(true)
     try {
       if (paymentMethod === 'mercado_pago') {
-        const { initPoint } = await confirmMercadoPagoOrder(orderInput)
+        const { initPoint, orderId } = await confirmMercadoPagoOrder(orderInput)
+        try {
+          sessionStorage.setItem(LAST_ORDER_ID_KEY, orderId)
+        } catch {
+          // Si sessionStorage no está disponible, ClearCartOnMount
+          // simplemente no vaciará el carrito al volver — es el fallback
+          // seguro, no una falla crítica.
+        }
         window.location.href = initPoint
         return
       }
@@ -208,10 +216,10 @@ function CheckoutPageContent() {
         />
       </label>
       <ShippingZoneSelect zones={getShippingZones()} value={zoneId} onChange={setZoneId} />
-      {summary && (
+      {!confirmedOrder && summary && (
         <p className="mt-4 text-lg font-semibold">Total: {formatCurrencyARS(summary.total)}</p>
       )}
-      {summaryError && (
+      {!confirmedOrder && summaryError && (
         <p role="alert" className="mt-2 text-sm text-primary">
           {summaryError}
         </p>

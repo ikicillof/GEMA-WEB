@@ -13,7 +13,7 @@ export default async function Page({
         {order ? `Tu pedido #${order} fue confirmado.` : 'Tu pedido fue confirmado.'} Te vamos a
         mandar un email con los detalles.
       </p>
-      <ClearCartOnMount />
+      <ClearCartOnMount orderId={order} />
     </div>
   )
 }

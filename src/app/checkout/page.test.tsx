@@ -177,6 +177,7 @@ describe('CheckoutPage', () => {
     it('sends the raw cart unitPrice to confirmMercadoPagoOrder when confirming with Mercado Pago', async () => {
       vi.mocked(checkoutActions.confirmMercadoPagoOrder).mockResolvedValue({
         initPoint: 'https://mercadopago.example.com/pay/order-1',
+        orderId: 'order-1',
       })
 
       await renderAuthenticatedCheckout()

@@ -90,7 +90,7 @@ export async function getCheckoutSummary(input: {
 
 export async function confirmMercadoPagoOrder(
   input: OrderInput
-): Promise<{ initPoint: string }> {
+): Promise<{ initPoint: string; orderId: string }> {
   const customerEmail = await requireAuthenticatedEmail()
   const repo = await getOrdersRepository()
   const safeInput: OrderInput = {
@@ -101,7 +101,7 @@ export async function confirmMercadoPagoOrder(
   const order = await createOrderFromCart(repo, safeInput)
   const payload = buildPreferencePayload(order)
   const { init_point } = await createPreference(payload, getMercadoPagoAccessToken())
-  return { initPoint: init_point }
+  return { initPoint: init_point, orderId: order.id }
 }
 
 export async function confirmCashOrTransferOrder(
