@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false }, { status: 400 })
   }
 
-  const repo = await getOrdersRepository()
+  const repo = await getOrdersRepository({ role: 'service' })
   const result = await handleWebhookPayload(repo, raw)
   return NextResponse.json(result, { status: result.ok ? 200 : 400 })
 }
