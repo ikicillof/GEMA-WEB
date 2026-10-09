@@ -29,6 +29,11 @@ describe('buildProductJsonLd', () => {
     )
     expect(jsonLd.offers.availability).toBe('https://schema.org/OutOfStock')
   })
+
+  it('resolves image paths to absolute URLs using the product url', () => {
+    const jsonLd = buildProductJsonLd(product, 'https://gemma.ar/producto/lampara-lumalee')
+    expect(jsonLd.image).toEqual(['https://gemma.ar/products/lumalee-1.jpg'])
+  })
 })
 
 describe('serializeJsonLd', () => {
