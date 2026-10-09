@@ -106,8 +106,17 @@ tilde usando `superpowers:subagent-driven-development`.
   tener un proyecto Mercado Pago real contra el cual probarlos sin
   riesgo de implementarlos mal a ciegas; ver detalle en el ledger
   interno)*
-- [ ] **Tarea 18 — Transferencia/efectivo + confirmación de pedido.**
+- [x] **Tarea 18 — Transferencia/efectivo + confirmación de pedido.**
   Server Action de Mercado Pago, flujo completo de checkout.
+  *(commits `2b1cce1c..ffa7712e`; 1 ronda de fix — la más importante en
+  seguridad de todo el plan: el servidor nunca volvía a validar el
+  precio contra el catálogo, así que cualquiera podía manipular el
+  carrito en `localStorage` (o llamar directamente al Server Action) y
+  pagar lo que quisiera. Se movió todo el cálculo de precio al
+  servidor para los dos medios de pago, verificado con un test que
+  prueba explícitamente que un precio manipulado NO se usa. Pendiente
+  no bloqueante: `quantity`/`color` todavía no se re-validan contra el
+  catálogo del lado del servidor, solo el precio)*
 - [ ] **Tarea 19 — Páginas de contenido.** Contacto, envíos y pagos, FAQ,
   botón de arrepentimiento (requisito legal en Argentina).
 - [ ] **Tarea 20 — SEO.** Metadata, JSON-LD de producto, sitemap.
