@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import Page from './page'
 import { CartProvider } from '@/components/cart/CartProvider'
 import * as cartStorage from '@/lib/cart/cart-storage'
 import * as supabaseClient from '@/lib/supabase/client'
+import * as checkoutActions from './actions'
 
 const { replaceMock } = vi.hoisted(() => ({ replaceMock: vi.fn() }))
 
@@ -13,6 +14,10 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: vi.fn(),
+}))
+
+vi.mock('./actions', () => ({
+  confirmMercadoPagoOrder: vi.fn(),
 }))
 
 const availableItem = {
@@ -92,9 +97,7 @@ describe('CheckoutPage', () => {
     )
 
     expect(await screen.findByText(/Zona de envío/i)).toBeInTheDocument()
-    await waitFor(() =>
-      expect(screen.getByText(/paso de medio de pago/i)).toBeInTheDocument()
-    )
+    await waitFor(() => expect(screen.getByText(/Medio de pago/i)).toBeInTheDocument())
     expect(screen.queryByText(/Enviarme el código para pagar/i)).not.toBeInTheDocument()
   })
 
@@ -116,5 +119,66 @@ describe('CheckoutPage', () => {
     expect(await screen.findByText(/Zona de envío/i)).toBeInTheDocument()
 
     expect(replaceMock).not.toHaveBeenCalledWith('/carrito')
+  })
+
+  describe('payment confirmation', () => {
+    async function renderAuthenticatedCheckout() {
+      vi.spyOn(cartStorage, 'loadCart').mockReturnValue({ items: [availableItem] })
+      mockAuth({ email: 'cliente@example.com' })
+
+      render(
+        <CartProvider>
+          <Page />
+        </CartProvider>
+      )
+
+      expect(await screen.findByText(/Medio de pago/i)).toBeInTheDocument()
+      fireEvent.change(screen.getByLabelText(/Dirección de entrega/i), {
+        target: { value: 'Calle Falsa 123' },
+      })
+    }
+
+    it('applies the 10% transfer discount when confirming with Transferencia', async () => {
+      await renderAuthenticatedCheckout()
+
+      fireEvent.click(screen.getByLabelText(/Transferencia \(10% off\)/i))
+      fireEvent.click(screen.getByRole('button', { name: /Confirmar pedido/i }))
+
+      // availableItem.unitPrice is 32000; with the 10% transfer discount that's
+      // 28800, plus the default "caba" shipping rate of 3500 => 32300 total.
+      expect(await screen.findByText(/32\.300/)).toBeInTheDocument()
+      expect(checkoutActions.confirmMercadoPagoOrder).not.toHaveBeenCalled()
+    })
+
+    it('does NOT apply the transfer discount when confirming with Mercado Pago', async () => {
+      vi.mocked(checkoutActions.confirmMercadoPagoOrder).mockResolvedValue({
+        initPoint: 'https://mercadopago.example.com/pay/order-1',
+      })
+
+      await renderAuthenticatedCheckout()
+
+      // 'mercado_pago' is already the default selection.
+      fireEvent.click(screen.getByRole('button', { name: /Confirmar pedido/i }))
+
+      await waitFor(() => expect(checkoutActions.confirmMercadoPagoOrder).toHaveBeenCalled())
+      const call = vi.mocked(checkoutActions.confirmMercadoPagoOrder).mock.calls[0][0]
+      expect(call.items[0].unitPrice).toBe(availableItem.unitPrice)
+    })
+
+    it('shows a confirmError alert and re-enables the button when confirmation fails', async () => {
+      vi.mocked(checkoutActions.confirmMercadoPagoOrder).mockRejectedValue(
+        new Error('Mercado Pago no respondió')
+      )
+
+      await renderAuthenticatedCheckout()
+
+      const confirmButton = screen.getByRole('button', { name: /Confirmar pedido/i })
+      fireEvent.click(confirmButton)
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        /No pudimos confirmar tu pedido/i
+      )
+      expect(screen.getByRole('button', { name: /Confirmar pedido/i })).not.toBeDisabled()
+    })
   })
 })

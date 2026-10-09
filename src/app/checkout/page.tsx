@@ -9,8 +9,14 @@ import { getAllProducts } from '@/lib/catalog'
 import { getShippingZones } from '@/lib/shipping'
 import { ShippingZoneSelect } from '@/components/checkout/ShippingZoneSelect'
 import { LoginForm } from '@/components/checkout/LoginForm'
+import { PaymentMethodSelect } from '@/components/checkout/PaymentMethodSelect'
+import { TransferInstructions } from '@/components/checkout/TransferInstructions'
 import { shouldRequireAuth } from '@/lib/auth/checkout-guard'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
+import { createOrderFromCart, createInMemoryOrdersRepository } from '@/lib/orders'
+import { computeTransferPrice } from '@/lib/pricing'
+import type { PaymentMethod } from '@/types/order'
+import { confirmMercadoPagoOrder } from './actions'
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -21,6 +27,13 @@ export default function CheckoutPage() {
   const [customerEmail, setCustomerEmail] = useState<string | null>(null)
   const [checkedAuth, setCheckedAuth] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('mercado_pago')
+  const [unavailableWarning, setUnavailableWarning] = useState<string | null>(null)
+  const [confirmedOrder, setConfirmedOrder] = useState<{ id: string; total: number } | null>(
+    null
+  )
+  const [confirmError, setConfirmError] = useState<string | null>(null)
+  const [isConfirming, setIsConfirming] = useState(false)
 
   useEffect(() => {
     if (isHydrated && !canStartCheckout(items)) {
@@ -71,6 +84,64 @@ export default function CheckoutPage() {
 
   const requiresAuth = shouldRequireAuth('payment', isAuthenticated)
 
+  async function handleConfirm() {
+    if (!address.trim()) {
+      setUnavailableWarning('Ingresá una dirección de entrega para continuar.')
+      return
+    }
+
+    if (!customerEmail) {
+      // No debería poder llegar acá: requiresAuth ya bloqueó este paso hasta
+      // que shouldRequireAuth('payment', isAuthenticated) sea false, lo cual
+      // solo pasa después de un verifyOtp exitoso que sí trae el email.
+      setUnavailableWarning('No pudimos confirmar tu sesión. Volvé a iniciar sesión.')
+      return
+    }
+
+    const products = getAllProducts()
+    const unavailable = findUnavailableItems(items, products)
+    if (unavailable.length > 0) {
+      setUnavailableWarning(
+        `"${unavailable[0].name}" en color ${unavailable[0].color} ya no está disponible. Quitalo del carrito para continuar.`
+      )
+      return
+    }
+
+    const hasTransferDiscount = paymentMethod === 'transferencia' || paymentMethod === 'efectivo'
+    const cartItems = items.map((i) => ({
+      productId: i.productId,
+      color: i.color,
+      quantity: i.quantity,
+      unitPrice: hasTransferDiscount ? computeTransferPrice(i.unitPrice) : i.unitPrice,
+    }))
+
+    const orderInput = {
+      items: cartItems,
+      shippingZoneId: zoneId,
+      paymentMethod,
+      customerEmail,
+      address,
+    }
+
+    setConfirmError(null)
+    setIsConfirming(true)
+    try {
+      if (paymentMethod === 'mercado_pago') {
+        const { initPoint } = await confirmMercadoPagoOrder(orderInput)
+        window.location.href = initPoint
+        return
+      }
+
+      const repo = createInMemoryOrdersRepository() // reemplazar por el repo de Supabase real una vez configurado
+      const order = await createOrderFromCart(repo, orderInput)
+      setConfirmedOrder({ id: order.id, total: order.total })
+    } catch {
+      setConfirmError('No pudimos confirmar tu pedido. Probá de nuevo en un momento.')
+    } finally {
+      setIsConfirming(false)
+    }
+  }
+
   return (
     <div className="px-4 py-10 md:px-10">
       <h1 className="mb-6 text-2xl font-semibold">Checkout</h1>
@@ -101,9 +172,28 @@ export default function CheckoutPage() {
           />
         </div>
       ) : (
-        <p className="mt-6">
-          Zona seleccionada: {zoneId}. (El paso de medio de pago se agrega en la Tarea 17.)
-        </p>
+        <div className="mt-6">
+          {confirmedOrder ? (
+            <TransferInstructions orderId={confirmedOrder.id} total={confirmedOrder.total} />
+          ) : (
+            <>
+              <PaymentMethodSelect value={paymentMethod} onChange={setPaymentMethod} />
+              {unavailableWarning && <p className="text-primary">{unavailableWarning}</p>}
+              {confirmError && (
+                <p role="alert" className="mt-2 text-sm text-primary">
+                  {confirmError}
+                </p>
+              )}
+              <button
+                onClick={handleConfirm}
+                disabled={isConfirming}
+                className="mt-4 rounded-full bg-primary px-7 py-3.5 font-semibold text-text disabled:opacity-60"
+              >
+                {isConfirming ? 'Confirmando...' : 'Confirmar pedido'}
+              </button>
+            </>
+          )}
+        </div>
       )}
     </div>
   )
