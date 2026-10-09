@@ -13,10 +13,8 @@ import { PaymentMethodSelect } from '@/components/checkout/PaymentMethodSelect'
 import { TransferInstructions } from '@/components/checkout/TransferInstructions'
 import { shouldRequireAuth } from '@/lib/auth/checkout-guard'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
-import { createOrderFromCart, createInMemoryOrdersRepository } from '@/lib/orders'
-import { computeTransferPrice } from '@/lib/pricing'
 import type { PaymentMethod } from '@/types/order'
-import { confirmMercadoPagoOrder } from './actions'
+import { confirmMercadoPagoOrder, confirmCashOrTransferOrder } from './actions'
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -85,6 +83,9 @@ export default function CheckoutPage() {
   const requiresAuth = shouldRequireAuth('payment', isAuthenticated)
 
   async function handleConfirm() {
+    setConfirmError(null)
+    setUnavailableWarning(null)
+
     if (!address.trim()) {
       setUnavailableWarning('Ingresá una dirección de entrega para continuar.')
       return
@@ -107,12 +108,11 @@ export default function CheckoutPage() {
       return
     }
 
-    const hasTransferDiscount = paymentMethod === 'transferencia' || paymentMethod === 'efectivo'
     const cartItems = items.map((i) => ({
       productId: i.productId,
       color: i.color,
       quantity: i.quantity,
-      unitPrice: hasTransferDiscount ? computeTransferPrice(i.unitPrice) : i.unitPrice,
+      unitPrice: i.unitPrice,
     }))
 
     const orderInput = {
@@ -123,7 +123,6 @@ export default function CheckoutPage() {
       address,
     }
 
-    setConfirmError(null)
     setIsConfirming(true)
     try {
       if (paymentMethod === 'mercado_pago') {
@@ -132,10 +131,10 @@ export default function CheckoutPage() {
         return
       }
 
-      const repo = createInMemoryOrdersRepository() // reemplazar por el repo de Supabase real una vez configurado
-      const order = await createOrderFromCart(repo, orderInput)
-      setConfirmedOrder({ id: order.id, total: order.total })
-    } catch {
+      const order = await confirmCashOrTransferOrder(orderInput)
+      setConfirmedOrder(order)
+    } catch (error) {
+      console.error('handleConfirm failed:', error)
       setConfirmError('No pudimos confirmar tu pedido. Probá de nuevo en un momento.')
     } finally {
       setIsConfirming(false)
@@ -178,7 +177,11 @@ export default function CheckoutPage() {
           ) : (
             <>
               <PaymentMethodSelect value={paymentMethod} onChange={setPaymentMethod} />
-              {unavailableWarning && <p className="text-primary">{unavailableWarning}</p>}
+              {unavailableWarning && (
+                <p role="alert" className="text-primary">
+                  {unavailableWarning}
+                </p>
+              )}
               {confirmError && (
                 <p role="alert" className="mt-2 text-sm text-primary">
                   {confirmError}

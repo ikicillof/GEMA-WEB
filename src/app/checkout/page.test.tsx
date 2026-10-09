@@ -18,6 +18,7 @@ vi.mock('@/lib/supabase/client', () => ({
 
 vi.mock('./actions', () => ({
   confirmMercadoPagoOrder: vi.fn(),
+  confirmCashOrTransferOrder: vi.fn(),
 }))
 
 const availableItem = {
@@ -138,19 +139,29 @@ describe('CheckoutPage', () => {
       })
     }
 
-    it('applies the 10% transfer discount when confirming with Transferencia', async () => {
+    it('sends the raw cart unitPrice to confirmCashOrTransferOrder when confirming with Transferencia', async () => {
+      // El descuento por transferencia ahora se calcula en el servidor
+      // (confirmCashOrTransferOrder / repriceItems), no en page.tsx. El cliente
+      // solo manda el unitPrice crudo del carrito y muestra lo que el server
+      // devuelve.
+      vi.mocked(checkoutActions.confirmCashOrTransferOrder).mockResolvedValue({
+        id: 'order-1',
+        total: 32300,
+      })
+
       await renderAuthenticatedCheckout()
 
       fireEvent.click(screen.getByLabelText(/Transferencia \(10% off\)/i))
       fireEvent.click(screen.getByRole('button', { name: /Confirmar pedido/i }))
 
-      // availableItem.unitPrice is 32000; with the 10% transfer discount that's
-      // 28800, plus the default "caba" shipping rate of 3500 => 32300 total.
       expect(await screen.findByText(/32\.300/)).toBeInTheDocument()
       expect(checkoutActions.confirmMercadoPagoOrder).not.toHaveBeenCalled()
+
+      const call = vi.mocked(checkoutActions.confirmCashOrTransferOrder).mock.calls[0][0]
+      expect(call.items[0].unitPrice).toBe(availableItem.unitPrice)
     })
 
-    it('does NOT apply the transfer discount when confirming with Mercado Pago', async () => {
+    it('sends the raw cart unitPrice to confirmMercadoPagoOrder when confirming with Mercado Pago', async () => {
       vi.mocked(checkoutActions.confirmMercadoPagoOrder).mockResolvedValue({
         initPoint: 'https://mercadopago.example.com/pay/order-1',
       })
