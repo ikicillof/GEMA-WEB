@@ -85,23 +85,23 @@ describe('handleWebhookPayload', () => {
   })
 })
 
-const { createSupabaseServerClientMock, createSupabaseOrdersRepositoryMock, inMemoryRepo } =
-  vi.hoisted(() => {
-    // The mock is assigned a fresh in-memory repo in beforeEach below; this
-    // placeholder keeps the hoisted reference shape stable for vi.mock below.
-    return {
-      createSupabaseServerClientMock: vi.fn(),
-      createSupabaseOrdersRepositoryMock: vi.fn(),
-      inMemoryRepo: { current: null as ReturnType<typeof createInMemoryOrdersRepository> | null },
-    }
-  })
+const { getOrdersRepositoryMock, inMemoryRepo } = vi.hoisted(() => {
+  // The mock is assigned a fresh in-memory repo in beforeEach below; this
+  // placeholder keeps the hoisted reference shape stable for vi.mock below.
+  return {
+    getOrdersRepositoryMock: vi.fn(),
+    inMemoryRepo: { current: null as ReturnType<typeof createInMemoryOrdersRepository> | null },
+  }
+})
 
-vi.mock('@/lib/supabase/server', () => ({
-  createSupabaseServerClient: createSupabaseServerClientMock,
-}))
-
-vi.mock('@/lib/orders/supabase-orders-repository', () => ({
-  createSupabaseOrdersRepository: createSupabaseOrdersRepositoryMock,
+// route.ts ya no llama a createSupabaseOrdersRepository/createSupabaseServerClient
+// directamente — usa el factory compartido getOrdersRepository (ver C1), así
+// que mockeamos ese factory en lugar de los imports de Supabase. Esto asegura
+// que el test ejercita el mismo punto de decisión que usan el checkout y el
+// webhook en producción, en vez de enmascarar una posible divergencia entre
+// ambos (el bug C1 original).
+vi.mock('@/lib/orders/get-orders-repository', () => ({
+  getOrdersRepository: getOrdersRepositoryMock,
 }))
 
 describe('POST /api/mercadopago/webhook', () => {
@@ -110,8 +110,7 @@ describe('POST /api/mercadopago/webhook', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     inMemoryRepo.current = createInMemoryOrdersRepository()
-    createSupabaseServerClientMock.mockResolvedValue({})
-    createSupabaseOrdersRepositoryMock.mockImplementation(() => inMemoryRepo.current)
+    getOrdersRepositoryMock.mockImplementation(async () => inMemoryRepo.current)
   })
 
   afterEach(() => {
@@ -129,7 +128,7 @@ describe('POST /api/mercadopago/webhook', () => {
     const response = await POST(request)
 
     expect(response.status).toBe(401)
-    expect(createSupabaseOrdersRepositoryMock).not.toHaveBeenCalled()
+    expect(getOrdersRepositoryMock).not.toHaveBeenCalled()
   })
 
   it('rejects a request with the wrong secret with 401 and never touches the repository', async () => {
@@ -146,7 +145,7 @@ describe('POST /api/mercadopago/webhook', () => {
     const response = await POST(request)
 
     expect(response.status).toBe(401)
-    expect(createSupabaseOrdersRepositoryMock).not.toHaveBeenCalled()
+    expect(getOrdersRepositoryMock).not.toHaveBeenCalled()
   })
 
   it('returns 400 for a malformed JSON body and never touches the repository', async () => {
@@ -163,7 +162,7 @@ describe('POST /api/mercadopago/webhook', () => {
     const response = await POST(request)
 
     expect(response.status).toBe(400)
-    expect(createSupabaseOrdersRepositoryMock).not.toHaveBeenCalled()
+    expect(getOrdersRepositoryMock).not.toHaveBeenCalled()
   })
 
   it('processes a request with the correct secret normally', async () => {
@@ -193,6 +192,6 @@ describe('POST /api/mercadopago/webhook', () => {
 
     expect(response.status).toBe(200)
     expect(body.ok).toBe(true)
-    expect(createSupabaseOrdersRepositoryMock).toHaveBeenCalledTimes(1)
+    expect(getOrdersRepositoryMock).toHaveBeenCalledTimes(1)
   })
 })

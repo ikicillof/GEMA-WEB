@@ -5,8 +5,7 @@ import {
   mapMercadoPagoStatusToOrderStatus,
 } from '@/lib/mercadopago'
 import type { OrdersRepository } from '@/lib/orders'
-import { createSupabaseOrdersRepository } from '@/lib/orders/supabase-orders-repository'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getOrdersRepository } from '@/lib/orders/get-orders-repository'
 
 // El llamador es responsable de verificar la autenticidad del request
 // (el chequeo de secreto compartido en POST) antes de invocar esto —
@@ -53,8 +52,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false }, { status: 400 })
   }
 
-  const supabase = await createSupabaseServerClient()
-  const repo = createSupabaseOrdersRepository(supabase)
+  const repo = await getOrdersRepository()
   const result = await handleWebhookPayload(repo, raw)
   return NextResponse.json(result, { status: result.ok ? 200 : 400 })
 }

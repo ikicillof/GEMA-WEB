@@ -1,6 +1,7 @@
 'use server'
 
-import { createOrderFromCart, createInMemoryOrdersRepository } from '@/lib/orders'
+import { createOrderFromCart } from '@/lib/orders'
+import { getOrdersRepository } from '@/lib/orders/get-orders-repository'
 import { buildPreferencePayload, createPreference } from '@/lib/mercadopago'
 import { getAllProducts } from '@/lib/catalog'
 import { computeTransferPrice } from '@/lib/pricing'
@@ -37,9 +38,7 @@ function repriceItems(items: OrderItem[], paymentMethod: PaymentMethod): OrderIt
 export async function confirmMercadoPagoOrder(
   input: OrderInput
 ): Promise<{ initPoint: string }> {
-  // createInMemoryOrdersRepository se reemplaza por createSupabaseOrdersRepository
-  // (Tarea 16) una vez que el proyecto Supabase real esté configurado.
-  const repo = createInMemoryOrdersRepository()
+  const repo = await getOrdersRepository()
   const safeInput: OrderInput = { ...input, items: repriceItems(input.items, input.paymentMethod) }
   const order = await createOrderFromCart(repo, safeInput)
   const payload = buildPreferencePayload(order)
@@ -50,7 +49,7 @@ export async function confirmMercadoPagoOrder(
 export async function confirmCashOrTransferOrder(
   input: OrderInput
 ): Promise<{ id: string; total: number }> {
-  const repo = createInMemoryOrdersRepository()
+  const repo = await getOrdersRepository()
   const safeInput: OrderInput = { ...input, items: repriceItems(input.items, input.paymentMethod) }
   const order = await createOrderFromCart(repo, safeInput)
   return { id: order.id, total: order.total }
