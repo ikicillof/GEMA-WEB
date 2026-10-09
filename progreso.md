@@ -117,8 +117,15 @@ tilde usando `superpowers:subagent-driven-development`.
   prueba explícitamente que un precio manipulado NO se usa. Pendiente
   no bloqueante: `quantity`/`color` todavía no se re-validan contra el
   catálogo del lado del servidor, solo el precio)*
-- [ ] **Tarea 19 — Páginas de contenido.** Contacto, envíos y pagos, FAQ,
-  botón de arrepentimiento (requisito legal en Argentina).
+- [x] **Tarea 19 — Páginas de contenido.** Contacto, envíos y pagos, FAQ,
+  botón de arrepentimiento (requisito legal en Argentina). *(commits
+  `8e06b974..11246031`; sin ronda de fix — 1 corrección directa:
+  **⚠️ importante revisar con un abogado antes de publicar**, la cita
+  legal original decía "Ley de Defensa del Consumidor, art. 1110" pero
+  esa ley solo tiene ~65 artículos; corregí a "Código Civil y
+  Comercial, art. 1110; Ley de Defensa del Consumidor, art. 34" según
+  mi razonamiento y conocimiento general, no una fuente legal
+  verificada)*
 - [ ] **Tarea 20 — SEO.** Metadata, JSON-LD de producto, sitemap.
 
 ## Fuera de alcance de este plan (ya documentado en el plan, no son pendientes)
