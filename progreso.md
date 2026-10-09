@@ -95,7 +95,17 @@ tilde usando `superpowers:subagent-driven-development`.
   + 1 ajuste mío: el repositorio Supabase confiaba en el round-trip sin
   tipar de la base para campos que ya conocía de antemano — corregido
   en ambos métodos)*
-- [ ] **Tarea 17 — Mercado Pago.** Preferencia de pago + webhook idempotente.
+- [x] **Tarea 17 — Mercado Pago.** Preferencia de pago + webhook idempotente.
+  *(commits `064a9f0a..441db99a`; 1 ronda de fix: el webhook original
+  no tenía ninguna autenticación — se agregó un secreto compartido; una
+  notificación tardía/fuera de orden podía retroceder un pedido ya
+  pagado — se agregó una guarda. **Importante antes de ir a
+  producción:** el webhook todavía confía en el cuerpo del POST en vez
+  de consultar la API de Pagos de Mercado Pago, y falta la verificación
+  de firma HMAC real — ambos quedaron deliberadamente diferidos hasta
+  tener un proyecto Mercado Pago real contra el cual probarlos sin
+  riesgo de implementarlos mal a ciegas; ver detalle en el ledger
+  interno)*
 - [ ] **Tarea 18 — Transferencia/efectivo + confirmación de pedido.**
   Server Action de Mercado Pago, flujo completo de checkout.
 - [ ] **Tarea 19 — Páginas de contenido.** Contacto, envíos y pagos, FAQ,
@@ -120,3 +130,16 @@ Antes de ejecutar las Tareas 15-18 hacen falta credenciales reales:
 Sin esas variables, esas tareas se pueden implementar y testear (la lógica
 de negocio está diseñada para testear sin red real), pero el flujo end-to-end
 contra servicios reales no se puede verificar hasta tenerlas.
+
+**Antes de procesar pagos reales (Tarea 17), revisar con un proyecto
+Mercado Pago real conectado:**
+- El webhook confía en el `status`/`external_reference` del cuerpo del
+  POST en vez de consultar la API de Pagos de Mercado Pago
+  (`GET /v1/payments/{id}`) para el estado autoritativo.
+- Falta la verificación de firma HMAC real de Mercado Pago (header
+  `x-signature`) — hoy solo hay un secreto compartido por query param
+  (`MERCADOPAGO_WEBHOOK_SECRET`), evaluado por un revisor de seguridad
+  dedicado como aceptable para esta etapa pero no equivalente.
+- Agregar también `MERCADOPAGO_WEBHOOK_SECRET` a `.env.local` y
+  configurar esa misma clave como `?secret=...` en la URL del webhook
+  dentro del panel de Mercado Pago.
