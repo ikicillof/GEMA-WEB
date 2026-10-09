@@ -126,7 +126,18 @@ tilde usando `superpowers:subagent-driven-development`.
   Comercial, art. 1110; Ley de Defensa del Consumidor, art. 34" según
   mi razonamiento y conocimiento general, no una fuente legal
   verificada)*
-- [ ] **Tarea 20 — SEO.** Metadata, JSON-LD de producto, sitemap.
+- [x] **Tarea 20 — SEO.** Metadata, JSON-LD de producto, sitemap.
+  *(commits `47e2f4c6..a2059b66`; 1 ronda de fix: las URLs de imagen
+  del JSON-LD quedaban relativas mientras que `offers.url` ya era
+  absoluta, tipado flojo en `availability`/`priceCurrency`, fallback
+  de URL duplicado, `lastModified` del sitemap siempre "ahora")*
+
+## 🎉 Las 20 tareas del plan están completas.
+
+Próximo paso: revisión final de toda la rama (modelo más capaz),
+una ronda de fix consolidada si aparecen hallazgos, y recién después
+el merge a `main` — que requiere tu confirmación explícita antes de
+hacerse, como ya habíamos acordado.
 
 ## Fuera de alcance de este plan (ya documentado en el plan, no son pendientes)
 
