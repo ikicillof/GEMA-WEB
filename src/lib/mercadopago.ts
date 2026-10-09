@@ -1,3 +1,4 @@
+import { calculateShippingTotal } from '@/lib/shipping'
 import type { Order, PaymentStatus } from '@/types/order'
 
 export type PreferenceItem = {
@@ -23,13 +24,26 @@ function getSiteUrl(): string {
 
 export function buildPreferencePayload(order: Order): PreferencePayload {
   const siteUrl = getSiteUrl()
+  const shippingTotal = calculateShippingTotal(order.shippingZoneId)
   return {
-    items: order.items.map((item) => ({
-      title: `${item.productId} (${item.color})`,
-      quantity: item.quantity,
-      unit_price: item.unitPrice,
-      currency_id: 'ARS',
-    })),
+    items: [
+      ...order.items.map((item) => ({
+        title: `${item.productId} (${item.color})`,
+        quantity: item.quantity,
+        unit_price: item.unitPrice,
+        currency_id: 'ARS' as const,
+      })),
+      ...(shippingTotal > 0
+        ? [
+            {
+              title: 'Envío',
+              quantity: 1,
+              unit_price: shippingTotal,
+              currency_id: 'ARS' as const,
+            },
+          ]
+        : []),
+    ],
     external_reference: order.id,
     back_urls: {
       success: `${siteUrl}/checkout/confirmacion?order=${order.id}`,

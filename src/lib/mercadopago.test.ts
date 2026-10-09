@@ -26,9 +26,38 @@ const order: Order = {
 describe('buildPreferencePayload', () => {
   it('includes one item per order item plus the order id as external_reference', () => {
     const payload = buildPreferencePayload(order)
-    expect(payload.items).toHaveLength(1)
+    expect(payload.items).toHaveLength(2)
     expect(payload.items[0]).toMatchObject({ quantity: 1, unit_price: 32000, currency_id: 'ARS' })
     expect(payload.external_reference).toBe('order-1')
+  })
+
+  it('includes the shipping cost as an explicit line item', () => {
+    const payload = buildPreferencePayload(order)
+    expect(payload.items[1]).toMatchObject({
+      title: 'Envío',
+      quantity: 1,
+      unit_price: 3500,
+      currency_id: 'ARS',
+    })
+  })
+
+  it('the sum of all preference line items matches order.total (no shipping is ever silently dropped)', () => {
+    const payload = buildPreferencePayload(order)
+    const preferenceTotal = payload.items.reduce(
+      (sum, item) => sum + item.unit_price * item.quantity,
+      0
+    )
+    expect(preferenceTotal).toBe(order.total)
+  })
+
+  it('does not add a shipping line item for a free/pickup zone', () => {
+    const pickupOrder: Order = {
+      ...order,
+      shippingZoneId: 'retiro-vicente-lopez',
+      total: 32000,
+    }
+    const payload = buildPreferencePayload(pickupOrder)
+    expect(payload.items.map((i) => i.title)).not.toContain('Envío')
   })
 
   it('throws a clear error when NEXT_PUBLIC_SITE_URL is not set', () => {
