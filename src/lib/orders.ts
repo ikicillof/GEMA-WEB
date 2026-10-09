@@ -9,6 +9,7 @@ export function computeOrderTotal(items: OrderItem[], shippingTotal: number): nu
 
 export interface OrdersRepository {
   createOrder(input: OrderInput, total: number): Promise<Order>
+  getOrder(orderId: string): Promise<Order | null>
   updateOrderPaymentStatus(orderId: string, status: PaymentStatus): Promise<Order>
 }
 
@@ -36,6 +37,9 @@ export function createInMemoryOrdersRepository(): OrdersRepository {
       }
       orders.set(order.id, order)
       return order
+    },
+    async getOrder(orderId) {
+      return orders.get(orderId) ?? null
     },
     async updateOrderPaymentStatus(orderId, status) {
       const order = orders.get(orderId)

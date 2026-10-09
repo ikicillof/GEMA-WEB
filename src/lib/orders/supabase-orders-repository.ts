@@ -38,6 +38,23 @@ export function createSupabaseOrdersRepository(client: SupabaseClient): OrdersRe
       }
     },
 
+    async getOrder(orderId: string): Promise<Order | null> {
+      const { data, error } = await client.from('orders').select().eq('id', orderId).single()
+      if (error || !data) return null
+      return {
+        id: data.id,
+        items: data.items,
+        shippingZoneId: data.shipping_zone_id,
+        paymentMethod: data.payment_method,
+        customerEmail: data.customer_email,
+        address: data.address,
+        total: data.total,
+        paymentStatus: data.payment_status,
+        shippingStatus: data.shipping_status,
+        createdAt: data.created_at,
+      }
+    },
+
     async updateOrderPaymentStatus(orderId: string, status: PaymentStatus): Promise<Order> {
       const { data, error } = await client
         .from('orders')

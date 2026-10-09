@@ -45,7 +45,14 @@ export function mapMercadoPagoStatusToOrderStatus(mpStatus: string): PaymentStat
       return 'pagado'
     case 'rejected':
       return 'rechazado'
+    case 'pending':
+    case 'in_process':
+    case 'authorized':
+      return 'pendiente'
     default:
+      console.warn(
+        `mapMercadoPagoStatusToOrderStatus: unrecognized Mercado Pago status "${mpStatus}", treating as pendiente`
+      )
       return 'pendiente'
   }
 }

@@ -46,6 +46,19 @@ describe('createOrderFromCart', () => {
     await expect(repo.updateOrderPaymentStatus('no-existe', 'pagado')).rejects.toThrow()
   })
 
+  it('returns the created order by id via getOrder', async () => {
+    const repo = createInMemoryOrdersRepository()
+    const order = await createOrderFromCart(repo, input)
+    const fetched = await repo.getOrder(order.id)
+    expect(fetched?.id).toBe(order.id)
+  })
+
+  it('returns null from getOrder for an unknown id', async () => {
+    const repo = createInMemoryOrdersRepository()
+    const fetched = await repo.getOrder('no-existe')
+    expect(fetched).toBeNull()
+  })
+
   it('rejects when the shipping zone is unknown', async () => {
     const repo = createInMemoryOrdersRepository()
     await expect(

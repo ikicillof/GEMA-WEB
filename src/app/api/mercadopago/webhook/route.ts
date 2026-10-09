@@ -8,6 +8,9 @@ import type { OrdersRepository } from '@/lib/orders'
 import { createSupabaseOrdersRepository } from '@/lib/orders/supabase-orders-repository'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
+// El llamador es responsable de verificar la autenticidad del request
+// (el chequeo de secreto compartido en POST) antes de invocar esto —
+// esta función no hace ningún chequeo de autenticación por sí misma.
 export async function handleWebhookPayload(
   repo: OrdersRepository,
   raw: unknown
@@ -16,13 +19,22 @@ export async function handleWebhookPayload(
   if (!parsed) return { ok: false }
 
   try {
+    const current = await repo.getOrder(parsed.orderId)
+    if (!current) return { ok: false }
+
     const status = mapMercadoPagoStatusToOrderStatus(parsed.mpStatus)
-    // updateOrderPaymentStatus vuelve a escribir el mismo estado si el webhook
-    // llega duplicado — no es una operación aditiva, así que es naturalmente
-    // idempotente: aplicarla dos veces deja el pedido en el mismo estado.
+    if (current.paymentStatus === 'pagado' && status !== 'pagado') {
+      // Pedido ya pagado: ignoramos una notificación tardía/fuera de orden
+      // que intentaría retrocederlo (ej. un "pending" que llega después del
+      // "approved" ya procesado). Devolvemos ok:true porque la notificación
+      // fue recibida y procesada correctamente — solo decidimos no aplicarla.
+      return { ok: true }
+    }
+
     await repo.updateOrderPaymentStatus(parsed.orderId, status)
     return { ok: true }
-  } catch {
+  } catch (error) {
+    console.error('handleWebhookPayload failed:', error)
     return { ok: false }
   }
 }
@@ -33,7 +45,14 @@ export async function POST(request: NextRequest) {
   if (!expectedSecret || providedSecret !== expectedSecret) {
     return NextResponse.json({ ok: false }, { status: 401 })
   }
-  const raw = await request.json()
+
+  let raw: unknown
+  try {
+    raw = await request.json()
+  } catch {
+    return NextResponse.json({ ok: false }, { status: 400 })
+  }
+
   const supabase = await createSupabaseServerClient()
   const repo = createSupabaseOrdersRepository(supabase)
   const result = await handleWebhookPayload(repo, raw)

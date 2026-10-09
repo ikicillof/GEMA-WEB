@@ -23,8 +23,29 @@ describe('handleWebhookPayload', () => {
     })
 
     expect(result.ok).toBe(true)
-    const updated = await repo.updateOrderPaymentStatus(order.id, 'pagado')
-    expect(updated.paymentStatus).toBe('pagado')
+    const updated = await repo.getOrder(order.id)
+    expect(updated?.paymentStatus).toBe('pagado')
+  })
+
+  it('ignores a downgrade attempt once the order is already paid', async () => {
+    const repo = createInMemoryOrdersRepository()
+    const order = await repo.createOrder(
+      {
+        items: [{ productId: 'lumalee', color: 'Rosa Gemma', quantity: 1, unitPrice: 32000 }],
+        shippingZoneId: 'caba',
+        paymentMethod: 'mercado_pago',
+        customerEmail: 'cliente@example.com',
+        address: 'Calle Falsa 123',
+      },
+      35500
+    )
+    await handleWebhookPayload(repo, { external_reference: order.id, status: 'approved' })
+
+    const result = await handleWebhookPayload(repo, { external_reference: order.id, status: 'pending' })
+
+    expect(result.ok).toBe(true)
+    const stillPaid = await repo.getOrder(order.id)
+    expect(stillPaid?.paymentStatus).toBe('pagado')
   })
 
   it('is idempotent: processing the same approved payload twice does not error', async () => {
@@ -125,6 +146,23 @@ describe('POST /api/mercadopago/webhook', () => {
     const response = await POST(request)
 
     expect(response.status).toBe(401)
+    expect(createSupabaseOrdersRepositoryMock).not.toHaveBeenCalled()
+  })
+
+  it('returns 400 for a malformed JSON body and never touches the repository', async () => {
+    process.env.MERCADOPAGO_WEBHOOK_SECRET = 'correcto'
+
+    const request = new NextRequest(
+      'http://localhost/api/mercadopago/webhook?secret=correcto',
+      {
+        method: 'POST',
+        body: 'not json',
+      }
+    )
+
+    const response = await POST(request)
+
+    expect(response.status).toBe(400)
     expect(createSupabaseOrdersRepositoryMock).not.toHaveBeenCalled()
   })
 
