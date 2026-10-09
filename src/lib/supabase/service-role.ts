@@ -12,5 +12,7 @@ export function createSupabaseServiceRoleClient() {
   if (!serviceRoleKey) {
     throw new Error('Falta la variable de entorno SUPABASE_SERVICE_ROLE_KEY')
   }
-  return createClient(url, serviceRoleKey)
+  return createClient(url, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
 }
