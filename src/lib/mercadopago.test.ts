@@ -60,6 +60,11 @@ describe('buildPreferencePayload', () => {
     expect(payload.items.map((i) => i.title)).not.toContain('Envío')
   })
 
+  it('sets auto_return to "approved" so Mercado Pago redirects back automatically on success', () => {
+    const payload = buildPreferencePayload(order)
+    expect(payload.auto_return).toBe('approved')
+  })
+
   it('throws a clear error when NEXT_PUBLIC_SITE_URL is not set', () => {
     const original = process.env.NEXT_PUBLIC_SITE_URL
     delete process.env.NEXT_PUBLIC_SITE_URL

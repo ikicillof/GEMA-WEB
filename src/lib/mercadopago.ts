@@ -12,6 +12,7 @@ export type PreferencePayload = {
   items: PreferenceItem[]
   external_reference: string
   back_urls: { success: string; failure: string; pending: string }
+  auto_return: 'approved'
 }
 
 function getSiteUrl(): string {
@@ -50,6 +51,7 @@ export function buildPreferencePayload(order: Order): PreferencePayload {
       failure: `${siteUrl}/checkout?order=${order.id}&status=failure`,
       pending: `${siteUrl}/checkout?order=${order.id}&status=pending`,
     },
+    auto_return: 'approved',
   }
 }
 

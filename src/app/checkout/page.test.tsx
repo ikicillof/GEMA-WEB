@@ -6,10 +6,14 @@ import * as cartStorage from '@/lib/cart/cart-storage'
 import * as supabaseClient from '@/lib/supabase/client'
 import * as checkoutActions from './actions'
 
-const { replaceMock } = vi.hoisted(() => ({ replaceMock: vi.fn() }))
+const { replaceMock, searchParamsState } = vi.hoisted(() => ({
+  replaceMock: vi.fn(),
+  searchParamsState: { value: '' },
+}))
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: replaceMock }),
+  useSearchParams: () => new URLSearchParams(searchParamsState.value),
 }))
 
 vi.mock('@/lib/supabase/client', () => ({
@@ -19,6 +23,7 @@ vi.mock('@/lib/supabase/client', () => ({
 vi.mock('./actions', () => ({
   confirmMercadoPagoOrder: vi.fn(),
   confirmCashOrTransferOrder: vi.fn(),
+  getCheckoutSummary: vi.fn(),
 }))
 
 const availableItem = {
@@ -54,6 +59,14 @@ describe('CheckoutPage', () => {
   beforeEach(() => {
     localStorage.clear()
     vi.clearAllMocks()
+    searchParamsState.value = ''
+    // Default: siempre resuelve con algún total, salvo que un test
+    // particular pise este mock para verificar el valor mostrado.
+    vi.mocked(checkoutActions.getCheckoutSummary).mockResolvedValue({
+      items: [],
+      shippingTotal: 0,
+      total: 0,
+    })
   })
 
   it('blocks checkout with a message when a cart item is no longer available', async () => {
@@ -190,6 +203,81 @@ describe('CheckoutPage', () => {
         /No pudimos confirmar tu pedido/i
       )
       expect(screen.getByRole('button', { name: /Confirmar pedido/i })).not.toBeDisabled()
+    })
+
+    it('clears the cart after a successful cash/transfer confirmation (I3)', async () => {
+      vi.mocked(checkoutActions.confirmCashOrTransferOrder).mockResolvedValue({
+        id: 'order-1',
+        total: 32300,
+      })
+
+      await renderAuthenticatedCheckout()
+
+      fireEvent.click(screen.getByLabelText(/Transferencia \(10% off\)/i))
+      fireEvent.click(screen.getByRole('button', { name: /Confirmar pedido/i }))
+
+      expect(await screen.findByText(/32\.300/)).toBeInTheDocument()
+
+      const stored = JSON.parse(localStorage.getItem('gemma_cart_v1') ?? '{"items":null}')
+      expect(stored.items).toEqual([])
+    })
+  })
+
+  describe('price summary (I4)', () => {
+    it('renders the total returned by getCheckoutSummary for a seeded cart', async () => {
+      vi.spyOn(cartStorage, 'loadCart').mockReturnValue({ items: [availableItem] })
+      mockAuth(null)
+      vi.mocked(checkoutActions.getCheckoutSummary).mockResolvedValue({
+        items: [availableItem],
+        shippingTotal: 3500,
+        total: 35500,
+      })
+
+      render(
+        <CartProvider>
+          <Page />
+        </CartProvider>
+      )
+
+      expect(await screen.findByText(/Total:\s*\$\s*35\.500/)).toBeInTheDocument()
+    })
+  })
+
+  describe('mercado pago payment status (I2)', () => {
+    it('shows a failure message for status=failure and does not clear or redirect away from the cart', async () => {
+      searchParamsState.value = 'status=failure'
+      vi.spyOn(cartStorage, 'loadCart').mockReturnValue({ items: [availableItem] })
+      mockAuth(null)
+
+      render(
+        <CartProvider>
+          <Page />
+        </CartProvider>
+      )
+
+      expect(
+        await screen.findByText(/El pago no se pudo procesar/i)
+      ).toBeInTheDocument()
+      expect(replaceMock).not.toHaveBeenCalledWith('/carrito')
+
+      const stored = JSON.parse(localStorage.getItem('gemma_cart_v1') ?? '{"items":null}')
+      expect(stored.items).toEqual([availableItem])
+    })
+
+    it('shows a pending message for status=pending', async () => {
+      searchParamsState.value = 'status=pending'
+      vi.spyOn(cartStorage, 'loadCart').mockReturnValue({ items: [availableItem] })
+      mockAuth(null)
+
+      render(
+        <CartProvider>
+          <Page />
+        </CartProvider>
+      )
+
+      expect(
+        await screen.findByText(/pendiente de confirmación/i)
+      ).toBeInTheDocument()
     })
   })
 })

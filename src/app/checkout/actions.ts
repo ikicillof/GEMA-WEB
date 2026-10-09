@@ -1,10 +1,11 @@
 'use server'
 
-import { createOrderFromCart } from '@/lib/orders'
+import { createOrderFromCart, computeOrderTotal } from '@/lib/orders'
 import { getOrdersRepository } from '@/lib/orders/get-orders-repository'
 import { buildPreferencePayload, createPreference } from '@/lib/mercadopago'
 import { getAllProducts } from '@/lib/catalog'
 import { computeTransferPrice } from '@/lib/pricing'
+import { calculateShippingTotal } from '@/lib/shipping'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { OrderInput, OrderItem, PaymentMethod } from '@/types/order'
 
@@ -55,6 +56,26 @@ function repriceItems(items: OrderItem[], paymentMethod: PaymentMethod): OrderIt
       unitPrice: hasTransferDiscount ? computeTransferPrice(product.price) : product.price,
     }
   })
+}
+
+export type CheckoutSummary = {
+  items: OrderItem[]
+  shippingTotal: number
+  total: number
+}
+
+// Preview de precio para mostrar en /checkout antes de confirmar: repricea
+// igual que las Server Actions que crean el pedido, pero no crea nada ni
+// requiere sesión — es puramente informativa.
+export async function getCheckoutSummary(input: {
+  items: OrderItem[]
+  shippingZoneId: string
+  paymentMethod: PaymentMethod
+}): Promise<CheckoutSummary> {
+  const items = repriceItems(input.items, input.paymentMethod)
+  const shippingTotal = calculateShippingTotal(input.shippingZoneId)
+  const total = computeOrderTotal(items, shippingTotal)
+  return { items, shippingTotal, total }
 }
 
 export async function confirmMercadoPagoOrder(

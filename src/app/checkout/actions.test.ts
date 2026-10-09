@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { confirmCashOrTransferOrder, confirmMercadoPagoOrder } from './actions'
+import { confirmCashOrTransferOrder, confirmMercadoPagoOrder, getCheckoutSummary } from './actions'
 import { getAllProducts } from '@/lib/catalog'
 import { computeTransferPrice } from '@/lib/pricing'
 import * as supabaseServer from '@/lib/supabase/server'
@@ -105,5 +105,66 @@ describe('confirmMercadoPagoOrder (repricing happens before the network call)', 
     await expect(confirmMercadoPagoOrder(input)).rejects.toThrow(
       'Producto desconocido: producto-inventado'
     )
+  })
+})
+
+// I4: el checkout no mostraba ningún precio antes de confirmar. getCheckoutSummary
+// es la Server Action que el cliente llama para previsualizar el total — repricea
+// igual que las acciones que sí crean el pedido, pero es de solo lectura.
+describe('getCheckoutSummary (read-only price preview, no auth or order creation)', () => {
+  it('reprices a known cart/zone/payment-method combination and returns the correct total', async () => {
+    const result = await getCheckoutSummary({
+      items: [{ productId: lumalee.id, color: 'Rosa Gemma', quantity: 2, unitPrice: 1 }],
+      shippingZoneId: 'caba',
+      paymentMethod: 'transferencia',
+    })
+
+    const expectedUnitPrice = computeTransferPrice(lumalee.price)
+    expect(result.items[0].unitPrice).toBe(expectedUnitPrice)
+    expect(result.shippingTotal).toBe(3500) // "caba" rate
+    expect(result.total).toBe(expectedUnitPrice * 2 + 3500)
+  })
+
+  it('does NOT require an authenticated session (unlike the order-creating actions)', async () => {
+    vi.mocked(supabaseServer.createSupabaseServerClient).mockResolvedValue({
+      auth: { getUser: () => Promise.resolve({ data: { user: null } }) },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any)
+
+    const result = await getCheckoutSummary({
+      items: [{ productId: lumalee.id, color: 'Rosa Gemma', quantity: 1, unitPrice: 1 }],
+      shippingZoneId: 'caba',
+      paymentMethod: 'mercado_pago',
+    })
+
+    expect(result.total).toBe(lumalee.price + 3500)
+    expect(supabaseServer.createSupabaseServerClient).not.toHaveBeenCalled()
+  })
+
+  it('does not create an order (never touches the orders repository)', async () => {
+    const repoModule = await import('@/lib/orders/get-orders-repository')
+    const spy = vi.spyOn(repoModule, 'getOrdersRepository')
+
+    try {
+      await getCheckoutSummary({
+        items: [{ productId: lumalee.id, color: 'Rosa Gemma', quantity: 1, unitPrice: 1 }],
+        shippingZoneId: 'caba',
+        paymentMethod: 'efectivo',
+      })
+
+      expect(spy).not.toHaveBeenCalled()
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it('rejects when the cart references a productId that does not exist in the catalog', async () => {
+    await expect(
+      getCheckoutSummary({
+        items: [{ productId: 'producto-inventado', color: 'N/A', quantity: 1, unitPrice: 1 }],
+        shippingZoneId: 'caba',
+        paymentMethod: 'efectivo',
+      })
+    ).rejects.toThrow('Producto desconocido: producto-inventado')
   })
 })

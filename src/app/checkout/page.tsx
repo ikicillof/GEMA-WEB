@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useCart } from '@/components/cart/CartProvider'
 import { canStartCheckout, findUnavailableItems } from '@/lib/checkout/guards'
@@ -13,12 +13,23 @@ import { PaymentMethodSelect } from '@/components/checkout/PaymentMethodSelect'
 import { TransferInstructions } from '@/components/checkout/TransferInstructions'
 import { shouldRequireAuth } from '@/lib/auth/checkout-guard'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
+import { formatCurrencyARS } from '@/lib/format'
 import type { PaymentMethod } from '@/types/order'
-import { confirmMercadoPagoOrder, confirmCashOrTransferOrder } from './actions'
+import { confirmMercadoPagoOrder, confirmCashOrTransferOrder, getCheckoutSummary } from './actions'
 
 export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<p className="px-4 py-10">Cargando...</p>}>
+      <CheckoutPageContent />
+    </Suspense>
+  )
+}
+
+function CheckoutPageContent() {
   const router = useRouter()
-  const { items, isHydrated } = useCart()
+  const searchParams = useSearchParams()
+  const paymentStatus = searchParams.get('status')
+  const { items, isHydrated, clear } = useCart()
   const [zoneId, setZoneId] = useState(getShippingZones()[0]?.id ?? '')
   const [address, setAddress] = useState('')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -32,12 +43,18 @@ export default function CheckoutPage() {
   )
   const [confirmError, setConfirmError] = useState<string | null>(null)
   const [isConfirming, setIsConfirming] = useState(false)
+  const [summary, setSummary] = useState<{ total: number } | null>(null)
+  const [summaryError, setSummaryError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (isHydrated && !canStartCheckout(items)) {
+    // Una vez confirmado el pedido (efectivo/transferencia), el carrito se
+    // vacía a propósito (Fix I3) — no hay que tratar eso como "carrito
+    // vacío, mandalo a /carrito": el pedido ya existe y hay que mostrarle
+    // las instrucciones de pago.
+    if (isHydrated && !confirmedOrder && !canStartCheckout(items)) {
       router.replace('/carrito')
     }
-  }, [items, isHydrated, router])
+  }, [items, isHydrated, router, confirmedOrder])
 
   useEffect(() => {
     let isMounted = true
@@ -59,8 +76,27 @@ export default function CheckoutPage() {
     }
   }, [])
 
+  useEffect(() => {
+    if (!isHydrated || items.length === 0) return
+    const cartItems = items.map((i) => ({
+      productId: i.productId,
+      color: i.color,
+      quantity: i.quantity,
+      unitPrice: i.unitPrice,
+    }))
+    getCheckoutSummary({ items: cartItems, shippingZoneId: zoneId, paymentMethod })
+      .then((result) => {
+        setSummary(result)
+        setSummaryError(null)
+      })
+      .catch((error) => {
+        console.error('getCheckoutSummary failed:', error)
+        setSummaryError('No pudimos calcular el total.')
+      })
+  }, [items, zoneId, paymentMethod, isHydrated])
+
   if (!isHydrated || !checkedAuth) return <p className="px-4 py-10">Cargando...</p>
-  if (!canStartCheckout(items)) return null
+  if (!confirmedOrder && !canStartCheckout(items)) return null
 
   const unavailableItems = findUnavailableItems(items, getAllProducts())
 
@@ -132,6 +168,7 @@ export default function CheckoutPage() {
       }
 
       const order = await confirmCashOrTransferOrder(orderInput)
+      clear()
       setConfirmedOrder(order)
     } catch (error) {
       console.error('handleConfirm failed:', error)
@@ -144,6 +181,16 @@ export default function CheckoutPage() {
   return (
     <div className="px-4 py-10 md:px-10">
       <h1 className="mb-6 text-2xl font-semibold">Checkout</h1>
+      {paymentStatus === 'failure' && (
+        <p role="alert" className="mb-4 text-primary">
+          El pago no se pudo procesar. Tu carrito sigue acá — podés intentar de nuevo.
+        </p>
+      )}
+      {paymentStatus === 'pending' && (
+        <p role="alert" className="mb-4 text-primary">
+          Tu pago está pendiente de confirmación. Te vamos a avisar por email cuando se acredite.
+        </p>
+      )}
       {authError && (
         <p role="alert" className="mb-4 text-sm text-primary">
           {authError}
@@ -161,6 +208,14 @@ export default function CheckoutPage() {
         />
       </label>
       <ShippingZoneSelect zones={getShippingZones()} value={zoneId} onChange={setZoneId} />
+      {summary && (
+        <p className="mt-4 text-lg font-semibold">Total: {formatCurrencyARS(summary.total)}</p>
+      )}
+      {summaryError && (
+        <p role="alert" className="mt-2 text-sm text-primary">
+          {summaryError}
+        </p>
+      )}
       {requiresAuth ? (
         <div className="mt-6">
           <LoginForm
