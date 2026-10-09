@@ -1,4 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+import * as supabaseServer from '@/lib/supabase/server'
+
+vi.mock('@/lib/supabase/server', () => ({
+  createSupabaseServerClient: vi.fn(),
+}))
 
 // Make sure no real Supabase env vars leak in from the test environment,
 // so this exercises the dev-singleton fallback path deterministically.
@@ -6,6 +11,17 @@ beforeEach(() => {
   vi.unstubAllEnvs()
   vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '')
   vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', '')
+
+  // confirmCashOrTransferOrder (C4) ahora exige una sesión verificada del
+  // lado del servidor; simulamos una sesión autenticada para que este test
+  // siga probando lo que probaba antes (la persistencia del pedido, C1).
+  vi.mocked(supabaseServer.createSupabaseServerClient).mockResolvedValue({
+    auth: {
+      getUser: () =>
+        Promise.resolve({ data: { user: { email: 'cliente@example.com' } } }),
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any)
 })
 
 describe('checkout → webhook order flow (end-to-end)', () => {

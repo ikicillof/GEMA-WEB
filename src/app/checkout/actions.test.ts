@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { confirmCashOrTransferOrder, confirmMercadoPagoOrder } from './actions'
 import { getAllProducts } from '@/lib/catalog'
 import { computeTransferPrice } from '@/lib/pricing'
+import * as supabaseServer from '@/lib/supabase/server'
 import type { OrderInput } from '@/types/order'
 
 // El reviewer encontró que el cliente controlaba el precio pagado: el carrito
@@ -9,6 +10,24 @@ import type { OrderInput } from '@/types/order'
 // Action. Estos tests verifican que el servidor ignora ese valor y siempre
 // recalcula desde el catálogo real (src/data/products.json) antes de crear
 // cualquier pedido.
+
+vi.mock('@/lib/supabase/server', () => ({
+  createSupabaseServerClient: vi.fn(),
+}))
+
+// El reviewer también encontró que estos Server Actions no verificaban
+// sesión del lado del servidor (C4). Simulamos una sesión autenticada para
+// que los tests de repricing sigan probando lo que probaban antes; el test
+// dedicado más abajo prueba el gate de autenticación en sí.
+beforeEach(() => {
+  vi.mocked(supabaseServer.createSupabaseServerClient).mockResolvedValue({
+    auth: {
+      getUser: () =>
+        Promise.resolve({ data: { user: { email: 'cliente@example.com' } } }),
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any)
+})
 
 const lumalee = getAllProducts().find((p) => p.id === 'lumalee')
 if (!lumalee) {
@@ -45,6 +64,25 @@ describe('confirmCashOrTransferOrder (repricing)', () => {
 
     await expect(confirmCashOrTransferOrder(input)).rejects.toThrow(
       'Producto desconocido: producto-inventado'
+    )
+  })
+
+  it('rejects when there is no authenticated session', async () => {
+    vi.mocked(supabaseServer.createSupabaseServerClient).mockResolvedValue({
+      auth: { getUser: () => Promise.resolve({ data: { user: null } }) },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any)
+
+    const tamperedInput: OrderInput = {
+      items: [{ productId: lumalee.id, color: 'Rosa Gemma', quantity: 1, unitPrice: 1 }],
+      shippingZoneId: 'caba',
+      paymentMethod: 'transferencia',
+      customerEmail: 'cliente@example.com',
+      address: 'Calle Falsa 123',
+    }
+
+    await expect(confirmCashOrTransferOrder(tamperedInput)).rejects.toThrow(
+      'Necesitás iniciar sesión'
     )
   })
 })

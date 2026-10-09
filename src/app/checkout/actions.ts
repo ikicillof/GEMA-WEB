@@ -5,6 +5,7 @@ import { getOrdersRepository } from '@/lib/orders/get-orders-repository'
 import { buildPreferencePayload, createPreference } from '@/lib/mercadopago'
 import { getAllProducts } from '@/lib/catalog'
 import { computeTransferPrice } from '@/lib/pricing'
+import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { OrderInput, OrderItem, PaymentMethod } from '@/types/order'
 
 function getMercadoPagoAccessToken(): string {
@@ -13,6 +14,27 @@ function getMercadoPagoAccessToken(): string {
     throw new Error('Falta la variable de entorno MERCADOPAGO_ACCESS_TOKEN')
   }
   return token
+}
+
+// Nunca confiamos en el customerEmail que manda el cliente — lo
+// reemplazamos siempre por el de la sesión verificada del lado del
+// servidor. Esto cierra el gate de "hay que iniciar sesión para pagar":
+// antes era puramente del lado del cliente (shouldRequireAuth en
+// checkout/page.tsx) y por lo tanto evitable llamando a este Server
+// Action directamente.
+async function requireAuthenticatedEmail(): Promise<string> {
+  try {
+    const supabase = await createSupabaseServerClient()
+    const { data } = await supabase.auth.getUser()
+    const email = data.user?.email
+    if (!email) {
+      throw new Error('No hay una sesión de usuario autenticada')
+    }
+    return email
+  } catch (error) {
+    console.error('requireAuthenticatedEmail failed:', error)
+    throw new Error('Necesitás iniciar sesión para confirmar el pedido')
+  }
 }
 
 // El cliente envía unitPrice, pero nunca confiamos en ese valor: siempre
@@ -38,8 +60,13 @@ function repriceItems(items: OrderItem[], paymentMethod: PaymentMethod): OrderIt
 export async function confirmMercadoPagoOrder(
   input: OrderInput
 ): Promise<{ initPoint: string }> {
+  const customerEmail = await requireAuthenticatedEmail()
   const repo = await getOrdersRepository()
-  const safeInput: OrderInput = { ...input, items: repriceItems(input.items, input.paymentMethod) }
+  const safeInput: OrderInput = {
+    ...input,
+    customerEmail,
+    items: repriceItems(input.items, input.paymentMethod),
+  }
   const order = await createOrderFromCart(repo, safeInput)
   const payload = buildPreferencePayload(order)
   const { init_point } = await createPreference(payload, getMercadoPagoAccessToken())
@@ -49,8 +76,13 @@ export async function confirmMercadoPagoOrder(
 export async function confirmCashOrTransferOrder(
   input: OrderInput
 ): Promise<{ id: string; total: number }> {
+  const customerEmail = await requireAuthenticatedEmail()
   const repo = await getOrdersRepository()
-  const safeInput: OrderInput = { ...input, items: repriceItems(input.items, input.paymentMethod) }
+  const safeInput: OrderInput = {
+    ...input,
+    customerEmail,
+    items: repriceItems(input.items, input.paymentMethod),
+  }
   const order = await createOrderFromCart(repo, safeInput)
   return { id: order.id, total: order.total }
 }
