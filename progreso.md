@@ -134,10 +134,40 @@ tilde usando `superpowers:subagent-driven-development`.
 
 ## 🎉 Las 20 tareas del plan están completas.
 
-Próximo paso: revisión final de toda la rama (modelo más capaz),
-una ronda de fix consolidada si aparecen hallazgos, y recién después
-el merge a `main` — que requiere tu confirmación explícita antes de
-hacerse, como ya habíamos acordado.
+## Revisión final de toda la rama (55 commits, 104 archivos) — COMPLETA
+
+La revisión final (modelo más capaz, opus) encontró que, aunque las 20
+tareas pasaron sus revisiones individuales, **el flujo de compra no
+funcionaba de punta a punta** por problemas de integración entre
+tareas que ningún revisor acotado a una sola tarea podía detectar:
+
+- **4 hallazgos Critical** (los pedidos nunca persistían entre checkout
+  y webhook; Mercado Pago no cobraba el envío; el webhook escribía a
+  Supabase con permisos de usuario anónimo; los Server Actions de pago
+  no verificaban sesión del lado del servidor) — **los 4 corregidos y
+  verificados**, con tests de mutación reales donde aplicaba.
+- **6 Important corregidos**: `proxy.ts` nunca se cargaba (estaba en la
+  ubicación incorrecta para Next 16), no existía página de confirmación
+  post-pago, el carrito no se vaciaba tras comprar (y esto reveló una
+  segunda carrera de hidratación real, también corregida), no se
+  mostraba ningún precio antes de confirmar, el servidor no validaba
+  disponibilidad/cantidad, y faltaba la migración SQL/RLS/`.env.example`
+  de Supabase.
+- **Quedaron explícitamente diferidos** (documentados, no son
+  descuidos): el webhook todavía confía en el cuerpo del POST de
+  Mercado Pago en vez de consultar su API de Pagos, y falta la
+  verificación de firma HMAC real — ambos necesitan un proyecto
+  Mercado Pago real para implementarse y probarse sin riesgo.
+- **Importante antes de ir a producción**: la cita legal de la página
+  de botón de arrepentimiento (Tarea 19) la corregí yo por razonamiento
+  propio, no por una fuente legal verificada — conviene que la revise
+  un abogado.
+
+Detalle forense completo de cada hallazgo, cada fix y cada re-review en
+el ledger interno (`.superpowers/sdd/.../progress.md`).
+
+**Próximo paso: esperando tu confirmación explícita para mergear
+`storefront-mvp` a `main`, como acordamos.**
 
 ## Fuera de alcance de este plan (ya documentado en el plan, no son pendientes)
 
