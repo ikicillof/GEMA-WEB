@@ -67,6 +67,50 @@ describe('confirmCashOrTransferOrder (repricing)', () => {
     )
   })
 
+  // I5: el servidor no validaba disponibilidad de producto/color ni que la
+  // cantidad fuera un entero positivo. repriceItems ya hacía el lookup del
+  // producto para repricear — estos tests verifican que ese mismo lookup
+  // ahora también rechaza items sold-out o con cantidades inválidas, lo cual
+  // cierra el bypass de llamar al Server Action directamente (o tamperear
+  // localStorage) para pedir algo no disponible.
+  it('rejects an order for a product that is marked fully unavailable', async () => {
+    const input: OrderInput = {
+      items: [{ productId: 'porta-llaves-ondas', color: 'Rosa Gemma', quantity: 1, unitPrice: 1 }],
+      shippingZoneId: 'caba',
+      paymentMethod: 'efectivo',
+      customerEmail: 'cliente@example.com',
+      address: 'Calle Falsa 123',
+    }
+
+    await expect(confirmCashOrTransferOrder(input)).rejects.toThrow(/no disponible/)
+  })
+
+  it('rejects an order for a color that is not available on an otherwise available product', async () => {
+    const input: OrderInput = {
+      items: [{ productId: lumalee.id, color: 'Amarillo', quantity: 1, unitPrice: 1 }],
+      shippingZoneId: 'caba',
+      paymentMethod: 'efectivo',
+      customerEmail: 'cliente@example.com',
+      address: 'Calle Falsa 123',
+    }
+
+    await expect(confirmCashOrTransferOrder(input)).rejects.toThrow(/[Cc]olor no disponible/)
+  })
+
+  it('rejects an order with an invalid quantity (zero, negative, or non-integer)', async () => {
+    for (const badQuantity of [0, -1, 2.5]) {
+      const input: OrderInput = {
+        items: [{ productId: lumalee.id, color: 'Rosa Gemma', quantity: badQuantity, unitPrice: 1 }],
+        shippingZoneId: 'caba',
+        paymentMethod: 'efectivo',
+        customerEmail: 'cliente@example.com',
+        address: 'Calle Falsa 123',
+      }
+
+      await expect(confirmCashOrTransferOrder(input)).rejects.toThrow(/[Cc]antidad inválida/)
+    }
+  })
+
   it('rejects when there is no authenticated session', async () => {
     vi.mocked(supabaseServer.createSupabaseServerClient).mockResolvedValue({
       auth: { getUser: () => Promise.resolve({ data: { user: null } }) },

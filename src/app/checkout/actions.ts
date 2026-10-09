@@ -47,9 +47,19 @@ function repriceItems(items: OrderItem[], paymentMethod: PaymentMethod): OrderIt
   const products = getAllProducts()
   const hasTransferDiscount = paymentMethod === 'transferencia' || paymentMethod === 'efectivo'
   return items.map((item) => {
+    if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
+      throw new Error(`Cantidad inválida para ${item.productId}: ${item.quantity}`)
+    }
     const product = products.find((p) => p.id === item.productId)
     if (!product) {
       throw new Error(`Producto desconocido: ${item.productId}`)
+    }
+    if (!product.available) {
+      throw new Error(`Producto desconocido o no disponible: ${item.productId}`)
+    }
+    const color = product.colors.find((c) => c.name === item.color)
+    if (!color || !color.available) {
+      throw new Error(`Color no disponible: ${item.productId} (${item.color})`)
     }
     return {
       ...item,
