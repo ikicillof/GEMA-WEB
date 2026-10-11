@@ -1,0 +1,9 @@
+type GemiMood = 'neutral' | 'happy' | 'thinking' | 'laughing'
+
+type Props = { tone?: 'violet' | 'yellow' | 'pink'; mood?: GemiMood; className?: string; customColor?: string }
+
+export function GemiSidekick({ tone = 'violet', mood = 'neutral', className = '', customColor }: Props) {
+  const fill = tone === 'yellow' ? '#FFD93D' : tone === 'pink' ? '#FF4DA6' : '#6D28D9'
+  const shadow = tone === 'yellow' ? '#F2A900' : '#4B1BA6'
+  return <svg className={`gemi-sidekick gemi-sidekick--${tone} ${className}`} viewBox="0 0 100 116" fill="none" aria-hidden="true" style={{ '--gemi-fill': customColor || fill } as React.CSSProperties}><path className="gemi-body" d="M50 5 89 31 80 84 50 111 20 84 11 31 50 5Z" fill="var(--gemi-fill)" stroke="#FFB4DB" strokeWidth="3"/><path d="m50 5 9 31-9 75-30-27 30-48Z" fill="#fff" opacity=".2"/><path d="m50 5-9 31 9 75 30-27-30-48Z" fill={shadow} opacity=".3"/><path d="m11 31 30 5 9-31M89 31l-30 5M20 84l30-48 30 48" stroke="#fff" strokeWidth="2" opacity=".45"/>{mood === 'laughing' ? <g className="gemi-face-eyes gemi-face-eyes--laughing"><path d="M32 60 38 65 44 60M56 60 62 65 68 60" stroke="#0F0F10" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></g> : <g className="gemi-face-eyes"><ellipse cx="38" cy="58" rx="4" ry="7" fill="#0F0F10"/><ellipse cx="62" cy="58" rx="4" ry="7" fill="#0F0F10"/></g>}<ellipse cx="27" cy="72" rx="7" ry="3" fill="#6D28D9" opacity=".75"/><ellipse cx="73" cy="72" rx="7" ry="3" fill="#6D28D9" opacity=".75"/>{mood === 'happy' && <path className="gemi-expression-mouth" d="M37 79 Q50 92 63 79" stroke="#6D28D9" strokeWidth="3" strokeLinecap="round" fill="none"/>}{mood === 'thinking' && <path className="gemi-expression-mouth" d="M40 84 Q49 80 58 84" stroke="#6D28D9" strokeWidth="3" strokeLinecap="round" fill="none"/>}{mood === 'laughing' && <ellipse className="gemi-expression-mouth" cx="50" cy="84" rx="10" ry="8" fill="#6D28D9"/>}</svg>
+}
