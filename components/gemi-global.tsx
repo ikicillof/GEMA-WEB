@@ -35,8 +35,9 @@ export function GemiGlobal() {
       node.style.setProperty('--look-y', `${y}px`)
     }
     const onProductColor = (event: Event) => {
-      const color = (event as CustomEvent<{ color?: string }>).detail?.color
-      if (color) setCustomColor(colorHex(color))
+      const { color, hex } = (event as CustomEvent<{ color?: string; hex?: string }>).detail ?? {}
+      if (hex) setCustomColor(hex) // el recorrido del home manda el hex directo (incluye colores de marca fuera de la lista de productos)
+      else if (color) setCustomColor(colorHex(color))
     }
     const onCardHover = (event: Event) => {
       const color = (event as CustomEvent<{ color?: string }>).detail?.color

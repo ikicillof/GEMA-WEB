@@ -23,20 +23,22 @@ export function SiteHeader() {
     const link = linkRef.current, img = imgRef.current
     if (!link || !img) return
     if (!isHome) { img.style.transform = ''; return }
-    let hero: { x: number; y: number; w: number } | null = null, raf = 0, tries = 0
-    const measure = () => { const el = document.querySelector('.portal-logo'); if (!el) return false; const r = el.getBoundingClientRect(); hero = { x: r.left + window.scrollX, y: r.top + window.scrollY, w: r.width }; return true }
+    // El logo del hero (invisible, solo reserva el lugar) está fijo en pantalla mientras dura la puerta: se lee su posición en vivo.
     const update = () => {
-      if (!hero) return
-      const l = link.getBoundingClientRect(), w = img.offsetWidth || l.width
-      const dist = window.innerWidth < 700 ? 150 : 300
-      const p = Math.min(1, Math.max(0, window.scrollY / dist)), e = p * p * (3 - 2 * p)
-      const s = 1 + (hero.w / w - 1) * (1 - e)
+      const hero = document.querySelector('.portal-logo'), stage = document.querySelector<HTMLElement>('.portal-stage')
+      if (!hero || !stage) return
+      const h = hero.getBoundingClientRect(), l = link.getBoundingClientRect(), w = img.offsetWidth || l.width
+      // Viaja cuando la puerta ya está casi abierta (50% → 75% del tramo fijo; la puerta termina de abrir al 70%).
+      const run = stage.offsetHeight - window.innerHeight
+      const from = run > 0 ? run * 0.5 : 0, dist = run > 0 ? run * 0.25 : window.innerWidth < 700 ? 150 : 300
+      const p = Math.min(1, Math.max(0, (window.scrollY - from) / dist)), e = p * p * (3 - 2 * p)
       img.style.transformOrigin = '0 0'
-      img.style.transform = `translate(${(hero.x - window.scrollX - l.left) * (1 - e)}px, ${(hero.y - window.scrollY - l.top) * (1 - e)}px) scale(${s})`
+      img.style.transform = `translate(${(h.left - l.left) * (1 - e)}px, ${(h.top - l.top) * (1 - e)}px) scale(${1 + (h.width / w - 1) * (1 - e)})`
     }
-    const init = () => { if (measure()) { update(); return } if (tries++ < 120) raf = requestAnimationFrame(init) }
-    const onResize = () => { img.style.transform = ''; if (window.scrollY < 2) measure(); update() }
+    const init = () => { if (document.querySelector('.portal-logo')) { update(); return } if (tries++ < 120) raf = requestAnimationFrame(init) }
+    let raf = 0, tries = 0
     init()
+    const onResize = update
     window.addEventListener('scroll', update, { passive: true }); window.addEventListener('resize', onResize)
     return () => { cancelAnimationFrame(raf); window.removeEventListener('scroll', update); window.removeEventListener('resize', onResize); img.style.transform = '' }
   }, [isHome])

@@ -9,11 +9,12 @@ import { GemmaMotion } from '@/components/gemma-motion'
 import { PageTransition } from '@/components/page-transition'
 import { InitialLoader } from '@/components/initial-loader'
 import { GemiGlobal } from '@/components/gemi-global'
+import { SmoothScroll } from '@/components/smooth-scroll'
 
 const poppins = Poppins({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-poppins', display: 'swap' })
 
 export const metadata: Metadata = { title: 'Gemma — Hacemos que cada rincón brille', description: 'Objetos de diseño impresos en 3D para hacer que cada rincón se sienta más hogar.' }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return <html lang="es"><body className={poppins.variable}><CartProvider><InitialLoader /><PageTransition /><SiteHeader /><main>{children}</main><SiteFooter /><CartDrawer /><GemiGlobal /><GemmaMotion /></CartProvider></body></html>
+  return <html lang="es"><body className={poppins.variable}><CartProvider><SmoothScroll /><InitialLoader /><PageTransition /><SiteHeader /><main>{children}</main><SiteFooter /><CartDrawer /><GemiGlobal /><GemmaMotion /></CartProvider></body></html>
 }

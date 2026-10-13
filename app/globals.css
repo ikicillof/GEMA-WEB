@@ -2,9 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { --graphite:#0F0F10; --gemma:#FF4DA6; --violet:#6D28D9; --turquoise:#00E6D2; --yellow:#FFD93D; --blush:#FFB4DB; --cream:#FFF9F5; }
+:root { --graphite:#0F0F10; --gemma:#FF4DA6; --violet:#6D28D9; --turquoise:#00E6D2; --yellow:#FFD93D; --blush:#FFB4DB; --cream:#FFF9F5; --fondo-gemma:radial-gradient(circle at 56% 43%, #FFD8A8 0%, #FFF1D9 36%, #FFF9F5 78%); }
 * { box-sizing:border-box; }
 html { scroll-behavior:smooth; }
+/* Hero: la puerta corrediza 3D ocupa toda la pantalla fija (para que la cámara pueda atravesarla) y se alinea con .portal-art. */
+.portal-door3d { position:absolute; z-index:1; inset:0; pointer-events:none; }
+.portal-door3d canvas { display:block; }
+/* Lenis (scroll suave de toda la web): reemplaza al scroll-behavior de CSS mientras está activo. */
+html.lenis, html.lenis body { height:auto; }
+.lenis.lenis-smooth { scroll-behavior:auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior:contain; }
+.lenis.lenis-stopped { overflow:hidden; }
+.lenis.lenis-smooth iframe { pointer-events:none; }
 body { margin:0; background:var(--cream); color:var(--graphite); font-family:var(--font-poppins),Arial,sans-serif; }
 a { color:inherit; text-decoration:none; }
 button { font:inherit; }
@@ -307,7 +316,7 @@ main { overflow-x:clip; }
 .portal-leaf--right { transform-origin:right center; transform:rotateY(calc(var(--door-progress) * 100deg)); }
 .portal-leaves--open .portal-leaf--left { transform-origin:left center; transform:rotateY(-100deg); }
 .portal-leaves--open .portal-leaf--right { transform-origin:right center; transform:rotateY(100deg); }
-.portal-lightwash { z-index:4; background:radial-gradient(circle at 56% 43%, #FFD8A8 0%, #FFF1D9 36%, #FFF9F5 78%); opacity:0; transition:none; }
+.portal-lightwash { z-index:4; background:var(--fondo-gemma); opacity:0; transition:none; }
 .portal-gemi { opacity:1; --gemi-fill:#FF4DA6; filter:drop-shadow(0 13px 14px rgba(15,15,16,.28)); }
 .portal-gemi .gemi-mouth { opacity:0; transition:opacity .2s ease; }
 .portal-gemi--companion { right:4vw; bottom:18vh; width:64px; height:75px; opacity:1; filter:drop-shadow(0 12px 14px rgba(15,15,16,.26)); }
@@ -476,3 +485,68 @@ html,body { overflow-x:clip; }
 /* La luz sale de la puerta: opacidad completa, crece como un círculo (sin pasar por gris). */
 .portal-lightwash { opacity:1; clip-path:circle(0px at 70% 55%); }
 @media (prefers-reduced-motion: reduce) { .portal-lightwash { clip-path:none; opacity:0; } }
+
+/* Recorrido del home: mismo fondo que la luz de la puerta, fijo en pantalla mientras se scrollea. */
+.recorrido { position:relative; z-index:2; margin-top:-120vh; pointer-events:none; } /* arranca cuando la puerta está al ~90%: sin espera entre la puerta y el primer objeto */
+.journey { position:relative; }
+.journey--parade { height:330vh; } /* +50vh: tramo de salida que se superpone con la sección 2 */
+.journey-sticky { position:sticky; top:0; height:100vh; overflow:hidden; }
+.journey-canvas { position:absolute; inset:0; }
+.journey-canvas canvas { display:block; }
+.journey-squiggles { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+.squiggle { fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1 1; stroke-dashoffset:1; }
+.journey-text { position:absolute; z-index:3; top:15%; right:6%; max-width:330px; margin:0; opacity:0; color:var(--graphite); font-size:clamp(22px,2.4vw,34px); font-weight:700; line-height:1.12; letter-spacing:-.05em; text-align:right; pointer-events:none; }
+.journey-text em { color:var(--gemma); font-style:normal; }
+@media (max-width:700px) {
+  .journey--parade { height:310vh; }
+  .journey-text { top:105px; left:20px; right:20px; max-width:none; font-size:24px; text-align:center; }
+  .squiggle { stroke-width:2; }
+  .squiggle--extra { display:none; }
+}
+/* La luz de la puerta usa el mismo degradado fijo en pantalla que el recorrido: al liberarse la puerta no hay corte. */
+.portal-lightwash { background-attachment:fixed; }
+
+/* Sección 2: Gemi. La caja del Gemi 3D mide 1,3 veces el alto del modelo (ver gemi-scene). */
+.journey--gemi { height:400vh; } /* 2,5 pantallas de animación (3 tramos de color) + media de salida */
+.gemi3d { --gemi-h:min(46vh, 400px); position:absolute; z-index:2; left:50%; top:50%; width:calc(var(--gemi-h) * 1.3); height:calc(var(--gemi-h) * 1.3); transform:translate(-50%,-50%); pointer-events:none; }
+.journey-text--gemi { top:50%; left:6%; right:auto; max-width:300px; text-align:left; transform:translateY(-50%); }
+.gemi-colors { position:absolute; z-index:3; top:50%; left:calc(50% + var(--gemi-side, 250px)); display:flex; flex-direction:column; gap:12px; transform:translateY(-50%); }
+.gemi-color { display:grid; place-items:center; width:44px; height:44px; padding:0; border:2px solid transparent; border-radius:50%; background:white; box-shadow:0 6px 16px rgba(15,15,16,.1); cursor:pointer; transition:border-color .25s ease, box-shadow .25s ease, transform .25s ease; }
+.gemi-color-dot { width:28px; height:28px; border-radius:50%; background:var(--dot); }
+.gemi-color:hover { transform:scale(1.06); }
+.gemi-color--active { border-color:var(--dot); box-shadow:0 0 0 4px rgba(255,255,255,.7), 0 8px 18px rgba(15,15,16,.16); transform:scale(1.1); }
+.gemi-color:focus-visible { outline:3px solid var(--violet); outline-offset:3px; }
+@media (max-width:1100px) { .gemi-colors { --gemi-side:210px; } }
+@media (max-width:700px) {
+  .gemi3d { --gemi-h:min(34vh, 260px); top:47%; }
+  .journey-text--gemi { top:100px; left:20px; right:20px; max-width:none; text-align:center; transform:none; }
+  .gemi-colors { top:auto; bottom:12vh; left:50%; flex-direction:row; gap:16px; transform:translateX(-50%); }
+}
+/* Sección 3: el rincón se enciende. El SVG y el canvas ocupan la pantalla fija; los objetos caen sobre las formas. */
+.journey--rincon { height:350vh; } /* 2 pantallas de animación + media de salida (se disuelve en la niebla) */
+/* El cuarto 3D (canvas transparente) se funde arriba y abajo con el fondo del recorrido: sin bordes ni recuadro. */
+.room-canvas { -webkit-mask-image:linear-gradient(to bottom, transparent 0, #000 16%, #000 84%, transparent 100%); mask-image:linear-gradient(to bottom, transparent 0, #000 16%, #000 84%, transparent 100%); }
+.journey-text--rincon { top:15%; left:50%; right:auto; max-width:none; text-align:center; white-space:nowrap; transform:translateX(-50%); font-size:clamp(28px,3.2vw,46px); }
+@media (max-width:700px) { .journey-text--rincon { top:100px; font-size:30px; } }
+/* Sección 4: salir por la puerta. La misma puerta corrediza 3D del hero (canvas a pantalla completa) se ubica en la
+   caja .exit-door, con las proporciones de la puerta (3,47 × 2,3 m más un margen). */
+.journey--door { height:300vh; } /* 1,5 pantallas de animación + media de salida (ya en negro) */
+.exit-door3d { position:absolute; z-index:1; inset:0; pointer-events:none; }
+.exit-door3d canvas { display:block; }
+.exit-scene { position:absolute; inset:0; display:grid; place-items:center; padding-top:60px; pointer-events:none; }
+.exit-door { width:min(640px, 84vw); aspect-ratio:3.68 / 2.3; }
+.exit-wash { position:absolute; z-index:5; inset:0; background:var(--graphite); clip-path:circle(0px at 50% 60%); pointer-events:none; }
+/* Sección 5: texto final sobre grafito; el footer sigue con el mismo fondo. */
+.journey-final { display:grid; place-items:center; min-height:100vh; padding:120px 24px; background:var(--graphite); color:white; text-align:center; }
+.journey-final-title { max-width:820px; }
+@media (max-width:700px) { .exit-door { width:min(340px, 82vw); } .journey-final { min-height:80vh; } }
+@media (prefers-reduced-motion: reduce) { .journey--door { height:100vh; } }
+/* Paso entre secciones: cada sección nueva se superpone media pantalla con la anterior (son transparentes), así el
+   tramo de transición —donde solo se ve Gemi— dura media pantalla de scroll en vez de una entera. */
+.journey--gemi,.journey--rincon,.journey--door,.journey-final { margin-top:-50vh; }
+@media (prefers-reduced-motion: reduce) { .recorrido { margin-top:0; } .journey--parade,.journey--gemi,.journey--rincon { height:100vh; } .journey-text { opacity:1; } .journey--gemi,.journey--rincon,.journey--door,.journey-final { margin-top:0; } }
+
+/* Hero: la luz que llena la pantalla al atravesar la puerta nace del centro (el paso) con un borde muy difuso y crece
+   con --wash (0 → 1) hasta cubrirla. Sin círculo de borde duro y sin pasar por gris. */
+.portal-lightwash { --wash:0; clip-path:none; -webkit-mask-image:radial-gradient(circle at 50% 55%, #000 calc(var(--wash) * 160% - 45%), transparent calc(var(--wash) * 160%)); mask-image:radial-gradient(circle at 50% 55%, #000 calc(var(--wash) * 160% - 45%), transparent calc(var(--wash) * 160%)); }
+@media (prefers-reduced-motion: reduce) { .portal-lightwash { -webkit-mask-image:none; mask-image:none; } }
