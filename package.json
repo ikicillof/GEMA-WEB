@@ -1,0 +1,30 @@
+{
+  "name": "gemma-store",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@react-three/fiber": "^8.17.10",
+    "@types/node": "20.14.15",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "gsap": "^3.15.0",
+    "lenis": "^1.1.13",
+    "lucide-react": "0.468.0",
+    "next": "^14.2.32",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "three": "^0.169.0",
+    "typescript": "5.5.4"
+  },
+  "devDependencies": {
+    "@types/three": "^0.169.0",
+    "autoprefixer": "10.4.19",
+    "postcss": "8.4.40",
+    "tailwindcss": "3.4.7"
+  }
+}

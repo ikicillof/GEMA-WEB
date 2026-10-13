@@ -1,0 +1,1 @@
+{"routes":[{"path":"/","title":"Inicio — Gemma"},{"path":"/tienda","title":"Tienda — Gemma"},{"path":"/quienes-somos","title":"Quiénes somos — Gemma"},{"path":"/contacto","title":"Contacto — Gemma"},{"path":"/producto/:slug","title":"Producto — Gemma"}]}
