@@ -87,7 +87,7 @@ const dracoLoader = (loader: GLTFLoader) => {
   const draco = new DRACOLoader(); draco.setDecoderPath('/draco/'); loader.setDRACOLoader(draco)
 }
 
-function Room({ progress, reduced, narrow }: { progress: MutableRefObject<RoomProgress>; reduced: boolean; narrow: boolean }) {
+function Room({ progress, reduced, narrow, dogColor }: { progress: MutableRefObject<RoomProgress>; reduced: boolean; narrow: boolean; dogColor: MutableRefObject<string> }) {
   const gltf = useLoader(GLTFLoader, '/modelos/cuarto.glb', dracoLoader)
   const cam = narrow ? CAMERA.mobile : CAMERA.desktop
   // Cuarto con materiales propios por grupo y las posiciones de los puntos de apoyo.
@@ -121,20 +121,22 @@ function Room({ progress, reduced, narrow }: { progress: MutableRefObject<RoomPr
   return <>
     <primitive object={scene} />
     <Suspense fallback={null}>
-      {ITEMS.map((item, i) => <FallingItem key={i} index={i} at={apoyos[i]} cam={cam.pos} progress={progress} reduced={reduced} shadow={shadow} />)}
+      {ITEMS.map((item, i) => <FallingItem key={i} index={i} at={apoyos[i]} cam={cam.pos} progress={progress} reduced={reduced} shadow={shadow} dogColor={dogColor} />)}
     </Suspense>
   </>
 }
 
-function FallingItem({ index, at, cam, progress, reduced, shadow }: { index: number; at: THREE.Vector3; cam: V3; progress: MutableRefObject<RoomProgress>; reduced: boolean; shadow: THREE.Texture }) {
+function FallingItem({ index, at, cam, progress, reduced, shadow, dogColor }: { index: number; at: THREE.Vector3; cam: V3; progress: MutableRefObject<RoomProgress>; reduced: boolean; shadow: THREE.Texture; dogColor: MutableRefObject<string> }) {
   const item = ITEMS[index], isStar = index === 2
   const gltf = useLoader(GLTFLoader, item.url, loader => loader.setMeshoptDecoder(MeshoptDecoder))
-  const { scene, mats } = useMemo(() => {
+  const { scene, mats, dogMat } = useMemo(() => {
     const s = gltf.scene.clone(true), mats: THREE.MeshStandardMaterial[] = []
+    let dogMat: THREE.MeshBasicMaterial | null = null
     if (item.url.endsWith('gemi.glb')) s.add(buildFace(s))
-    if (item.url.endsWith('perro-globo.glb')) { const blue = perroMaterial(s); s.traverse(o => { if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).material = blue }) } // solo azul, sin vetas de la luz de la estrella
+    // El perro va de un solo color, sin vetas de la luz de la estrella: el que se eligió en la impresora (o el de por defecto).
+    if (item.url.endsWith('perro-globo.glb')) { dogMat = perroMaterial(s); const mat = dogMat; s.traverse(o => { if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).material = mat }) }
     if (isStar) s.traverse(o => { const m = o as THREE.Mesh; if (m.isMesh) { const mat = (m.material as THREE.MeshStandardMaterial).clone(); m.material = mat; mats.push(mat) } })
-    return { scene: s, mats }
+    return { scene: s, mats, dogMat }
   }, [gltf, item.url, isStar])
   const body = useRef<THREE.Group>(null), blob = useRef<THREE.Mesh>(null), light = useRef<THREE.PointLight>(null)
   const k = item.h / (2 * item.half)
@@ -142,6 +144,7 @@ function FallingItem({ index, at, cam, progress, reduced, shadow }: { index: num
 
   useFrame(() => {
     if (!body.current || !blob.current) return
+    if (dogMat && dogMat.userData.hex !== dogColor.current) { dogMat.color.set(dogColor.current); dogMat.userData.hex = dogColor.current }
     const q = reduced ? 1 : progress.current.rincon, land = LANDINGS[index]
     const fall = clamp01((q - (land - 0.1)) / 0.1), u = clamp01((q - land) / 0.08)
     // Cae acelerando desde arriba del encuadre; al tocar, dos rebotes cortos de gomita que se apagan.
@@ -188,7 +191,7 @@ function Rig({ progress, reduced, narrow }: { progress: MutableRefObject<RoomPro
   return null
 }
 
-export default function RoomScene({ progress, narrow, reduced }: { progress: MutableRefObject<RoomProgress>; narrow: boolean; reduced: boolean }) {
+export default function RoomScene({ progress, narrow, reduced, dogColor }: { progress: MutableRefObject<RoomProgress>; narrow: boolean; reduced: boolean; dogColor: MutableRefObject<string> }) {
   const cam = narrow ? CAMERA.mobile : CAMERA.desktop
   return <Canvas
     frameloop="demand"
@@ -200,6 +203,6 @@ export default function RoomScene({ progress, narrow, reduced }: { progress: Mut
     <hemisphereLight args={['#fff4e6', '#e9c7b0', 1.5]} />
     <directionalLight position={[3, 4, 2.5]} intensity={1.3} />
     <Rig progress={progress} reduced={reduced} narrow={narrow} />
-    <Suspense fallback={null}><Room progress={progress} reduced={reduced} narrow={narrow} /></Suspense>
+    <Suspense fallback={null}><Room progress={progress} reduced={reduced} narrow={narrow} dogColor={dogColor} /></Suspense>
   </Canvas>
 }

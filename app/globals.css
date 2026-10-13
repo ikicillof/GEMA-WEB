@@ -513,22 +513,31 @@ html,body { overflow-x:clip; }
 /* La luz de la puerta usa el mismo degradado fijo en pantalla que el recorrido: al liberarse la puerta no hay corte. */
 .portal-lightwash { background-attachment:fixed; }
 
-/* Sección 2: Gemi. La caja del Gemi 3D mide 1,3 veces el alto del modelo (ver gemi-scene). */
-.journey--gemi { height:400vh; } /* 2,5 pantallas de animación (3 tramos de color) + media de salida */
-.gemi3d { --gemi-h:min(46vh, 400px); position:absolute; z-index:2; left:50%; top:50%; width:calc(var(--gemi-h) * 1.3); height:calc(var(--gemi-h) * 1.3); transform:translate(-50%,-50%); pointer-events:none; }
-.journey-text--gemi { top:50%; left:6%; right:auto; max-width:300px; text-align:left; transform:translateY(-50%); }
-.gemi-colors { position:absolute; z-index:3; top:50%; left:calc(50% + var(--gemi-side, 250px)); display:flex; flex-direction:column; gap:12px; transform:translateY(-50%); }
-.gemi-color { display:grid; place-items:center; width:44px; height:44px; padding:0; border:2px solid transparent; border-radius:50%; background:white; box-shadow:0 6px 16px rgba(15,15,16,.1); cursor:pointer; transition:border-color .25s ease, box-shadow .25s ease, transform .25s ease; }
-.gemi-color-dot { width:28px; height:28px; border-radius:50%; background:var(--dot); }
-.gemi-color:hover { transform:scale(1.06); }
-.gemi-color--active { border-color:var(--dot); box-shadow:0 0 0 4px rgba(255,255,255,.7), 0 8px 18px rgba(15,15,16,.16); transform:scale(1.1); }
-.gemi-color:focus-visible { outline:3px solid var(--violet); outline-offset:3px; }
-@media (max-width:1100px) { .gemi-colors { --gemi-side:210px; } }
+/* Sección 2: la impresora 3D (cómo nace una pieza). Sin fondo propio: usa el degradado crema fijo del home, así se funde con la 1 y la 3. */
+.journey--printer { height:350vh; } /* 2 pantallas de animación + media de salida */
+.pj-texts { position:absolute; inset:0; pointer-events:none; }
+.pj-text { top:50%; left:6%; right:auto; max-width:330px; text-align:left; transform:translateY(-50%); }
+/* Menú de colores del Perro Globo (antes de imprimir): círculos como los de la ficha de producto, debajo del texto. */
+.pj-colors { position:absolute; z-index:3; top:calc(50% + 62px); left:6%; width:min(330px, 88vw); }
+.pj-color-list { display:flex; flex-wrap:wrap; gap:10px; }
+.pj-color { display:grid; place-items:center; width:40px; height:40px; padding:0; border:2px solid transparent; border-radius:50%; background:white; box-shadow:0 6px 16px rgba(15,15,16,.1); cursor:pointer; transition:border-color .25s ease, box-shadow .25s ease, transform .25s ease; }
+.pj-color-dot { width:26px; height:26px; border-radius:50%; background:var(--dot); box-shadow:inset 0 0 0 1px rgba(15,15,16,.14); }
+.pj-color:hover { transform:scale(1.06); }
+.pj-color--active { border-color:var(--dot); box-shadow:0 0 0 4px rgba(255,255,255,.7), 0 8px 18px rgba(15,15,16,.16); transform:scale(1.1); }
+.pj-color:focus-visible { outline:3px solid var(--violet); outline-offset:3px; }
+.pj-color-name { margin:12px 0 0 2px; color:var(--graphite); font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
 @media (max-width:700px) {
-  .gemi3d { --gemi-h:min(34vh, 260px); top:47%; }
-  .journey-text--gemi { top:100px; left:20px; right:20px; max-width:none; text-align:center; transform:none; }
-  .gemi-colors { top:auto; bottom:12vh; left:50%; flex-direction:row; gap:16px; transform:translateX(-50%); }
+  .pj-text { top:100px; left:20px; right:20px; max-width:none; text-align:center; transform:none; }
+  .pj-colors { top:150px; left:20px; right:20px; width:auto; }
+  .pj-color-list { justify-content:center; gap:8px; }
+  .pj-color { width:36px; height:36px; } .pj-color-dot { width:23px; height:23px; }
+  .pj-color-name { text-align:center; margin-left:0; }
 }
+/* Con movimiento reducido: la impresora con la pieza terminada y los tres textos + el menú a la vista, en una columna. */
+.pj-sticky--static .pj-texts { display:flex; flex-direction:column; justify-content:center; gap:18px; padding:0 6%; }
+.pj-sticky--static .pj-text { position:static; opacity:1; transform:none; max-width:330px; font-size:clamp(20px,2vw,28px); }
+.pj-sticky--static .pj-colors { position:static; pointer-events:auto; }
+@media (max-width:700px) { .pj-sticky--static .pj-texts { justify-content:flex-start; padding:96px 20px 0; gap:10px; } .pj-sticky--static .pj-text { text-align:center; max-width:none; font-size:18px; } }
 /* Sección 3: el rincón se enciende. El SVG y el canvas ocupan la pantalla fija; los objetos caen sobre las formas. */
 .journey--rincon { height:350vh; } /* 2 pantallas de animación + media de salida (se disuelve en la niebla) */
 /* El cuarto 3D (canvas transparente) se funde arriba y abajo con el fondo del recorrido: sin bordes ni recuadro. */
@@ -551,8 +560,8 @@ html,body { overflow-x:clip; }
 @media (prefers-reduced-motion: reduce) { .journey--door { height:100vh; } }
 /* Paso entre secciones: cada sección nueva se superpone media pantalla con la anterior (son transparentes), así el
    tramo de transición —donde solo se ve Gemi— dura media pantalla de scroll en vez de una entera. */
-.journey--gemi,.journey--rincon,.journey--door,.journey-final { margin-top:-50vh; }
-@media (prefers-reduced-motion: reduce) { .recorrido { margin-top:0; } .journey--parade,.journey--gemi,.journey--rincon { height:100vh; } .journey-text { opacity:1; } .journey--gemi,.journey--rincon,.journey--door,.journey-final { margin-top:0; } }
+.journey--printer,.journey--rincon,.journey--door,.journey-final { margin-top:-50vh; }
+@media (prefers-reduced-motion: reduce) { .recorrido { margin-top:0; } .journey--parade,.journey--printer,.journey--rincon { height:100vh; } .journey-text { opacity:1; } .journey--printer,.journey--rincon,.journey--door,.journey-final { margin-top:0; } }
 
 /* Hero: la luz que llena la pantalla al atravesar la puerta nace del centro (el paso) con un borde muy difuso y crece
    con --wash (0 → 1) hasta cubrirla. Sin círculo de borde duro y sin pasar por gris. */
