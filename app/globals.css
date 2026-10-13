@@ -38,7 +38,8 @@ button { font:inherit; }
 .cart-button:hover,.menu-button:hover { background:var(--gemma); border-color:var(--gemma); }
 .cart-button b { display:grid; place-items:center; min-width:20px; height:20px; padding:0 5px; border-radius:20px; color:var(--graphite); background:var(--yellow); font-size:11px; }
 .menu-button { padding:10px; }
-.mobile-menu { position:absolute; top:100%; left:0; right:0; padding:12px 20px 20px; background:var(--graphite); border-top:1px solid rgba(255,255,255,.1); }
+/* z-index 70: por encima del logo del home (60), que en el hero viaja grande y antes tapaba el menú abierto en el celular. */
+.mobile-menu { z-index:70; position:absolute; top:100%; left:0; right:0; padding:12px 20px 20px; background:var(--graphite); border-top:1px solid rgba(255,255,255,.1); }
 .mobile-link { display:block; padding:13px 0; border-bottom:1px solid rgba(255,255,255,.1); color:rgba(255,255,255,.7); font-weight:600; }
 .mobile-link--active { color:var(--gemma); }
 .hero { position:relative; overflow:hidden; min-height:720px; padding:150px 0 92px; background:var(--graphite); color:white; }
@@ -423,7 +424,7 @@ main { overflow-x:clip; }
 
 /* Gemi global: la copia del portal queda invisible para evitar duplicados */
 .portal-gemi { opacity:0 !important; pointer-events:none; }
-.gemi-global .gemi-body { fill:var(--gemi-fill) !important; stroke:#171717; stroke-width:2.4; transition:fill .45s ease, stroke .35s ease; }
+.gemi-global .gemi-body { fill:var(--gemi-fill) !important; stroke:none; transition:fill .45s ease; }
 .gemi-global .gemi-sidekick { filter:drop-shadow(0 12px 14px rgba(15,15,16,.28)); transition:filter .35s ease; }
 
 /* Interacción accesible de Gemi */
