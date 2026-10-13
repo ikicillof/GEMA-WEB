@@ -13,8 +13,10 @@ export function InitialLoader() {
       if (window.sessionStorage.getItem('gemma-initial-loader')) { setVisible(false); return }
       window.sessionStorage.setItem('gemma-initial-loader', '1')
     } catch { /* Si storage está bloqueado, igual se oculta por tiempo. */ }
-    const openTimer = window.setTimeout(() => setOpening(true), 1100)
-    const hideTimer = window.setTimeout(() => setVisible(false), 1500)
+    // La pantalla de carga dura 2 s más que antes (1,1 s → 3,1 s hasta abrirse): a veces la puerta 3D del hero todavía
+    // no había terminado de cargar cuando se iba.
+    const openTimer = window.setTimeout(() => setOpening(true), 3100)
+    const hideTimer = window.setTimeout(() => setVisible(false), 3500)
     return () => { window.clearTimeout(openTimer); window.clearTimeout(hideTimer) }
   }, [])
   if (!visible) return null

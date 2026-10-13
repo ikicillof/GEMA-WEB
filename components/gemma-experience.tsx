@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
+import Link from 'next/link'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { invalidate } from '@react-three/fiber'
@@ -84,7 +85,7 @@ export function GemmaExperience() {
             <Image className="portal-logo" src="/productos/logo-transparent.png" alt="Gemma" width={466} height={275} priority />
             <p className="portal-tagline">Hacemos que cada rincón <em>brille.</em></p>
             <p className="hero-lead">Diseños impresos en 3D, hechos a pedido y llenos de color. Para que tu casa se sienta un poquito más vos.</p>
-            <div className="hero-actions"><a href="/tienda" className="button button--pink">Ver la tienda <span aria-hidden="true">→</span></a><a href="#quienes-somos" className="button button--outline">Conocer Gemma</a></div>
+            <div className="hero-actions"><Link href="/tienda" className="button button--pink">Ver la tienda <span aria-hidden="true">→</span></Link><a href="#quienes-somos" className="button button--outline">Conocer Gemma</a></div>
           </div>
           {/* Columna de la puerta: la puerta 3D (canvas de fondo) se ubica midiendo esta caja. */}
           <div className="portal-art" ref={artRef} aria-hidden="true">
