@@ -7,7 +7,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
-import { buildFace } from './gemi-scene'
+import { buildFace, perroMaterial } from './gemi-scene'
 
 // Progreso de la sección 3 (0 a 1) que escribe home-journey. enter/exit: cuánto entró la sección a la pantalla
 // y cuánto se fue; con eso el cuarto aparece desde la niebla y se vuelve a disolver.
@@ -35,7 +35,7 @@ const GROUPS: Record<string, { wave: 0 | 1 | 2; colors: [string, string][]; fall
   },
   Puerta: { wave: 0, fallback: '#FF4DA6', colors: [['picaporte', '#FFD93D']] },
   Paredes: { wave: 1, fallback: '#FFD6E8', colors: [['ventana', '#FFF6EC'], ['cuadro', '#BFF5EF']] },
-  Piso: { wave: 2, fallback: '#FFE4C4', colors: [['alfombra', '#D9C8F7']] },
+  Piso: { wave: 2, fallback: '#FFD93D', colors: [['alfombra', '#D9C8F7']] }, // piso amarillo: resalta el cambio al encenderse
 }
 
 // Objetos que caen, en orden, sobre los puntos de apoyo del cuarto. h = alto en metros; turn = giro extra.
@@ -132,6 +132,7 @@ function FallingItem({ index, at, cam, progress, reduced, shadow }: { index: num
   const { scene, mats } = useMemo(() => {
     const s = gltf.scene.clone(true), mats: THREE.MeshStandardMaterial[] = []
     if (item.url.endsWith('gemi.glb')) s.add(buildFace(s))
+    if (item.url.endsWith('perro-globo.glb')) { const blue = perroMaterial(s); s.traverse(o => { if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).material = blue }) } // solo azul, sin vetas de la luz de la estrella
     if (isStar) s.traverse(o => { const m = o as THREE.Mesh; if (m.isMesh) { const mat = (m.material as THREE.MeshStandardMaterial).clone(); m.material = mat; mats.push(mat) } })
     return { scene: s, mats }
   }, [gltf, item.url, isStar])
@@ -153,8 +154,9 @@ function FallingItem({ index, at, cam, progress, reduced, shadow }: { index: num
     if (isStar) {
       // Brillo final: la estrella se enciende y su luz cálida ilumina todo el cuarto.
       const glow = ease(clamp01((q - GLOW[0]) / (GLOW[1] - GLOW[0])))
-      mats.forEach(m => { m.emissive.set('#FFB347'); m.emissiveIntensity = glow * 0.9 })
-      if (light.current) light.current.intensity = glow * 7
+      // Brillo cálido pero contenido: no quema las paredes de arriba, donde está el texto.
+      mats.forEach(m => { m.emissive.set('#FFB347'); m.emissiveIntensity = glow * 0.7 })
+      if (light.current) light.current.intensity = glow * 2.6
     }
   })
 
@@ -163,7 +165,7 @@ function FallingItem({ index, at, cam, progress, reduced, shadow }: { index: num
     <mesh ref={blob} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.004, 0]} scale={[item.h * 1.3, item.h * 1.1, 1]}>
       <planeGeometry /><meshBasicMaterial map={shadow} transparent depthWrite={false} opacity={0} />
     </mesh>
-    {isStar && <pointLight ref={light} position={[0, item.h * 0.8, 0.15]} color="#FFB347" intensity={0} distance={9} decay={1.6} />}
+    {isStar && <pointLight ref={light} position={[0, item.h * 0.8, 0.15]} color="#FFB347" intensity={0} distance={5} decay={2} />}
   </group>
 }
 

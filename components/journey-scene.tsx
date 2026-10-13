@@ -6,7 +6,7 @@ import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
-import { buildFace } from './gemi-scene'
+import { buildFace, perroMaterial } from './gemi-scene'
 
 type Progress = MutableRefObject<number>
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v))
@@ -35,6 +35,7 @@ function Model({ index, progress, narrow, reduced, shadow }: { index: number; pr
   const scene = useMemo(() => {
     const s = gltf.scene.clone(true)
     if (url.endsWith('gemi.glb')) s.add(buildFace(s)) // la misma cara que el Gemi de la sección 2
+    if (url.endsWith('perro-globo.glb')) { const blue = perroMaterial(s); s.traverse(o => { if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).material = blue }) } // solo azul
     return s
   }, [gltf, url])
   const { viewport } = useThree()

@@ -27,6 +27,28 @@ function makeProjector(scene: THREE.Object3D) {
   }
 }
 
+// Perro globo: un solo azul de la paleta (Azul, #2563EB) con sombras suaves para que tenga volumen, pero SIN depender de
+// las luces ni de las normales del modelo (de ahí salían las vetas): el sombreado sale solo de la posición. Más claro
+// arriba y a la izquierda (donde pega la luz), más oscuro abajo y a la derecha, siempre en tonos del mismo azul.
+export function perroMaterial(root: THREE.Object3D) {
+  let mesh: THREE.Mesh | null = null
+  root.traverse(o => { if (!mesh && (o as THREE.Mesh).isMesh) mesh = o as THREE.Mesh })
+  const box = new THREE.Box3()
+  if (mesh) { const g = (mesh as THREE.Mesh).geometry; g.computeBoundingBox(); box.copy(g.boundingBox!) }
+  const m = new THREE.MeshBasicMaterial({ color: '#2563EB' })
+  m.onBeforeCompile = shader => {
+    shader.uniforms.uBox = { value: new THREE.Vector4(box.min.x, box.min.y, box.max.x, box.max.y) }
+    shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vP;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvP = position.xy;')
+    shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec4 uBox;\nvarying vec2 vP;')
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        vec2 t = clamp((vP - uBox.xy) / max(uBox.zw - uBox.xy, vec2(1e-4)), 0.0, 1.0);
+        float shade = 0.60 + 0.34 * smoothstep(0.0, 1.0, t.y) + 0.12 * (0.5 - t.x);
+        diffuseColor.rgb *= clamp(shade, 0.55, 1.08);`)
+  }
+  m.customProgramCacheKey = () => 'gemma-perro'
+  return m
+}
+
 export function buildFace(scene: THREE.Object3D) {
   const project = makeProjector(scene)
   const face = new THREE.Group()

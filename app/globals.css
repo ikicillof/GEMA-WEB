@@ -558,3 +558,64 @@ html,body { overflow-x:clip; }
    con --wash (0 → 1) hasta cubrirla. Sin círculo de borde duro y sin pasar por gris. */
 .portal-lightwash { --wash:0; clip-path:none; -webkit-mask-image:radial-gradient(circle at 50% 55%, #000 calc(var(--wash) * 160% - 45%), transparent calc(var(--wash) * 160%)); mask-image:radial-gradient(circle at 50% 55%, #000 calc(var(--wash) * 160% - 45%), transparent calc(var(--wash) * 160%)); }
 @media (prefers-reduced-motion: reduce) { .portal-lightwash { -webkit-mask-image:none; mask-image:none; } }
+
+/* Títulos con el borde del logo: trazo negro grueso, bien redondeado y "mullido" (las puntas y las uniones salen
+   redondas), con un anillo blanco por fuera como la etiqueta del logo. Todo en em: acompaña el tamaño de cada título. */
+.page-title, .section-title, .product-detail h1, .journey-text, .journey-final-title, .portal-tagline, .hero-title {
+  -webkit-text-stroke:.13em #0F0F10; paint-order:stroke fill; stroke-linejoin:round; stroke-linecap:round;
+  font-weight:800; letter-spacing:-.045em;
+  filter:drop-shadow(.035em 0 0 #fff) drop-shadow(-.035em 0 0 #fff) drop-shadow(0 .035em 0 #fff) drop-shadow(0 -.035em 0 #fff);
+}
+@supports not (paint-order:stroke fill) { .page-title, .section-title, .product-detail h1, .journey-text, .journey-final-title, .portal-tagline, .hero-title { -webkit-text-stroke:0; filter:none; } }
+
+/* Vuela al carrito + total que cuenta */
+.fly-to-cart { position:fixed; z-index:120; top:0; left:0; width:56px; height:56px; overflow:hidden; border:3px solid #fff; border-radius:50%; box-shadow:0 8px 18px rgba(15,15,16,.32); pointer-events:none; will-change:transform,opacity; }
+.fly-to-cart img { width:100%; height:100%; object-fit:cover; }
+.count-price { font-variant-numeric:tabular-nums; }
+@media (prefers-reduced-motion: reduce) { .fly-to-cart { display:none; } }
+
+/* Sección de entrega: mapa con moto */
+.delivery { padding-top:24px; }
+.delivery-grid { display:grid; grid-template-columns:minmax(240px,.8fr) minmax(0,1.5fr); gap:clamp(24px,4vw,56px); align-items:center; }
+.delivery-title { margin:10px 0 0; font-size:clamp(28px,3.6vw,46px); line-height:1.05; font-weight:800; letter-spacing:-.02em; will-change:transform,opacity; }
+.delivery-sub { margin:16px 0 0; max-width:30ch; color:rgba(23,23,23,.68); font-size:14px; line-height:1.45; font-weight:500; will-change:transform,opacity; }
+.delivery-card { overflow:hidden; border:2px solid #171717; border-radius:28px; background:#FFFDF9; box-shadow:8px 9px 0 var(--gemma); }
+.delivery-card svg { display:block; width:100%; height:auto; }
+.delivery-moto,.delivery-box,.delivery-house * { transform-box:fill-box; }
+.delivery-moto { transform-origin:50% 100%; }
+.delivery-moto--brake { animation:moto-brake .75s cubic-bezier(.2,1.5,.4,1); }
+.delivery-box { transform-origin:50% 100%; opacity:0; transform:scale(.2); transition:opacity .15s ease, transform .5s cubic-bezier(.2,1.6,.4,1) .25s; }
+.delivery-box--show { opacity:1; transform:scale(1); }
+.delivery-glow { opacity:0; transition:opacity .6s ease .45s; }
+.delivery-house--lit .delivery-glow { opacity:1; }
+.delivery-window { transition:fill .4s ease .45s; }
+.delivery-house--lit .delivery-window { fill:#FFD93D; }
+.delivery-door { transition:fill .4s ease .45s; }
+.delivery-house--lit .delivery-door { fill:#FF4DA6; }
+@keyframes moto-brake { 0% { transform:translateX(0) rotate(0); } 25% { transform:translateX(7px) rotate(-6deg); } 55% { transform:translateX(-3px) rotate(3deg); } 80% { transform:translateX(1px) rotate(-1deg); } 100% { transform:none; } }
+@media (max-width:700px) { .delivery-grid { grid-template-columns:1fr; } .delivery-sub { max-width:none; } .delivery-card { border-radius:22px; box-shadow:5px 6px 0 var(--gemma); } }
+@media (prefers-reduced-motion: reduce) { .delivery-title,.delivery-sub { opacity:1!important; transform:none!important; } .delivery-moto--brake { animation:none; } }
+
+/* 404: puerta que se abre a un vacío con estrellitas */
+.nf { position:relative; min-height:min(100svh,900px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:34px; padding:120px 20px 64px; background:var(--fondo-gemma); }
+.nf-sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+.nf-fx { position:absolute; inset:0; pointer-events:none; }
+.nf-fx canvas { display:block; }
+.nf-stage { position:relative; z-index:1; width:min(560px,92vw); }
+.nf-canvas { width:100%; aspect-ratio:1.483; }
+.nf-canvas canvas { display:block; }
+.nf-slot { --nf-gemi-w:90px; position:absolute; left:50%; bottom:3%; width:var(--nf-gemi-w); height:calc(var(--nf-gemi-w) * 1.16); transform:translateX(-50%); }
+.nf-gemi { display:block; width:100%; height:100%; padding:0; border:0; background:none; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.nf-gemi-fly { display:block; width:100%; height:100%; opacity:0; transform-origin:50% 100%; }
+.nf-gemi-body { display:block; width:100%; height:100%; transform:rotate(var(--tilt,0deg)); transform-origin:50% 100%; transition:transform .35s cubic-bezier(.2,1.4,.4,1); }
+.nf-gemi .gemi-sidekick { width:100%; height:100%; filter:drop-shadow(0 12px 14px rgba(15,15,16,.38)); }
+.nf-gemi .gemi-body { fill:var(--gemi-fill)!important; stroke:none; }
+.nf-gemi .gemi-face-eyes { transform:translate(var(--look-x,0px),var(--look-y,0px)); transition:transform .25s ease-out; }
+.nf-bubble-wrap { position:absolute; left:50%; bottom:calc(100% + 12px); width:0; display:flex; justify-content:center; pointer-events:none; }
+.nf-bubble { padding:10px 15px; border:2px solid #171717; border-radius:14px 14px 14px 4px; background:#FFF9F5; color:#171717; box-shadow:5px 6px 0 #FF4DA6; font-size:13px; font-weight:700; line-height:1.25; white-space:nowrap; animation:gemi-speech-in .26s cubic-bezier(.2,1.3,.4,1) both; }
+.nf-actions { position:relative; z-index:1; display:flex; flex-wrap:wrap; justify-content:center; gap:12px; }
+body.nf-active .gemi-global { visibility:hidden; }
+@media (max-width:700px) { .nf { gap:26px; padding-top:104px; } .nf-stage { width:min(300px,78vw); } .nf-slot { --nf-gemi-w:58px; } .nf-bubble { font-size:11px; padding:8px 12px; } }
+
+/* Estela del cursor: un canvas fijo por encima de todo, sin capturar clics; solo se muestra en escritorio (lo activa el JS) */
+.cursor-trail { display:none; position:fixed; z-index:2000; inset:0; width:100%; height:100%; pointer-events:none; }
