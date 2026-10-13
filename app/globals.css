@@ -5,6 +5,12 @@
 :root { --graphite:#0F0F10; --gemma:#FF4DA6; --violet:#6D28D9; --turquoise:#00E6D2; --yellow:#FFD93D; --blush:#FFB4DB; --cream:#FFF9F5; --fondo-gemma:radial-gradient(circle at 56% 43%, #FFD8A8 0%, #FFF1D9 36%, #FFF9F5 78%); }
 * { box-sizing:border-box; }
 html { scroll-behavior:smooth; }
+/* Túnel de entrada a /tienda: encima de todo (por sobre la transición de puerta, el loader y Gemi), con un fundido final
+   a la página del catálogo, que ya está cargada detrás. Gemi fijo no se ve durante el viaje. */
+.tunnel-overlay { position:fixed; z-index:1100; inset:0; overflow:hidden; background:#0F0F10; opacity:1; transition:opacity .38s ease; }
+.tunnel-overlay canvas { display:block; width:100%; height:100%; }
+.tunnel-overlay--fade { opacity:0; pointer-events:none; }
+.tunnel-active .gemi-global { visibility:hidden !important; }
 /* Hero: la puerta corrediza 3D ocupa toda la pantalla fija (para que la cámara pueda atravesarla) y se alinea con .portal-art. */
 .portal-door3d { position:absolute; z-index:1; inset:0; pointer-events:none; }
 .portal-door3d canvas { display:block; }
@@ -537,7 +543,8 @@ html,body { overflow-x:clip; }
 .exit-door { width:min(640px, 84vw); aspect-ratio:3.68 / 2.3; }
 .exit-wash { position:absolute; z-index:5; inset:0; background:var(--graphite); clip-path:circle(0px at 50% 60%); pointer-events:none; }
 /* Sección 5: texto final sobre grafito; el footer sigue con el mismo fondo. */
-.journey-final { display:grid; place-items:center; min-height:100vh; padding:120px 24px; background:var(--graphite); color:white; text-align:center; }
+/* position + z-index: como se superpone media pantalla con la puerta, tiene que pintarse por encima de su capa fija. */
+.journey-final { position:relative; z-index:3; display:grid; place-items:center; min-height:100vh; padding:120px 24px; background:var(--graphite); color:white; text-align:center; }
 .journey-final-title { max-width:820px; }
 @media (max-width:700px) { .exit-door { width:min(340px, 82vw); } .journey-final { min-height:80vh; } }
 @media (prefers-reduced-motion: reduce) { .journey--door { height:100vh; } }

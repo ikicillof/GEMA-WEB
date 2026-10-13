@@ -29,7 +29,6 @@ const DOOR = { GEMI_FROM: 0.04, WAVE_FROM: 0.18, CLOSE_FROM: 0.3, CLOSE_TO: 0.72
 const PARADE_STOP = 2 * PARADE_TIMING.STAGGER + (0.3 - PARADE_TIMING.HEAD_START) * PARADE_TIMING.WINDOW
 const ROOM_STOP = (ROOM_TEXT_IN + 1) / 2 + 0.02 // cuarto encendido con el texto ya visible
 const DOOR_STOP = DOOR.CLOSE_FROM // Gemi ya saludó en la puerta abierta, justo antes de que se cierre
-const DOOR_CLOSED_STOP = DOOR.CLOSE_TO // puerta cerrada, antes de que entre el negro
 // Las animaciones de cada sección siguen al scroll con retardo (más lentas y suaves).
 const SCRUB = 1.5
 // Firuletes de formas distintas. Posición (x, y) como fracción de pantalla; largo y amplitud en "unidades" (1000 = ancho de referencia).
@@ -313,7 +312,6 @@ export function HomeJourney() {
       { y: top(room), section: 3 }, // principio del cuarto (todavía gris): desde Gemi no se saltea la secuencia
       { y: at(room, ROOM_STOP), section: 3 }, // cuarto encendido con el texto
       { y: at(door, DOOR_STOP), section: 4 }, // puerta abierta con Gemi saludando
-      { y: at(door, DOOR_CLOSED_STOP), section: 4 }, // puerta cerrada
       { y: top(final), section: 5 }, // texto final (el footer queda libre)
     ]
     let dir = 1, peak = 0, lastY = window.scrollY, lastT = performance.now()
@@ -337,11 +335,14 @@ export function HomeJourney() {
     // · hero ↔ desfile: como antes, 1 a 3 s (0,48 + 0,87·d), sine.inOut — la apertura de la puerta es parte de la experiencia.
     // · dentro de una sección: 1,2 a 2 s (0,9 + 0,55·d), sine.inOut, despacio.
     // · cambio de sección: 0,6 a 0,9 s (0,5 + 0,2·d), power3.out: arranca decidido y se asienta suave.
+    // · puerta abierta ↔ texto final: de corrido y sin frenar en la puerta cerrada, en un solo deslizamiento lento
+    //   (1,8 a 3,2 s, 0,9 + 0,8·d, sine.inOut) que cierra la puerta, funde a negro y llega al texto.
     const easeOutCubic = (t: number) => 1 - (1 - t) ** 3
     const snapMotion = (from: Stop, to: Stop, distance: number) => {
       const d = distance / window.innerHeight, clamp = (lo: number, hi: number, v: number) => Math.min(hi, Math.max(lo, v))
-      const heroLeg = Math.min(from.section, to.section) === 0 && Math.max(from.section, to.section) === 1
-      const motion = heroLeg ? { duration: clamp(1, 3, 0.48 + 0.87 * d), easing: easeInOutSine }
+      const between = (a: number, b: number) => Math.min(from.section, to.section) === a && Math.max(from.section, to.section) === b
+      const motion = between(0, 1) ? { duration: clamp(1, 3, 0.48 + 0.87 * d), easing: easeInOutSine }
+        : between(4, 5) ? { duration: clamp(1.8, 3.2, 0.9 + 0.8 * d), easing: easeInOutSine }
         : from.section === to.section ? { duration: clamp(1.2, 2, 0.9 + 0.55 * d), easing: easeInOutSine }
         : { duration: clamp(0.6, 0.9, 0.5 + 0.2 * d), easing: easeOutCubic }
       return mode.narrow ? { ...motion, duration: motion.duration * 0.8 } : motion
