@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { invalidate } from '@react-three/fiber'
+import { invalidateSafe as invalidate } from '@/lib/safe-invalidate'
 import { useEffect, useRef, useState } from 'react'
 import type { MutableRefObject } from 'react'
 import type { RoomProgress } from './room-scene'
@@ -69,7 +69,11 @@ export function HomeJourney() {
   const rinconTextRef = useRef<HTMLParagraphElement>(null)
   const rinconPaths = useRef<(SVGPathElement | null)[]>([])
   const roomProgress = useRef<RoomProgress>({ rincon: 0, enter: 0, exit: 0 })
-  const [roomReady, setRoomReady] = useState(false) // el cuarto 3D se carga recién al acercarse a la sección 3
+  // Cada escena 3D a pantalla completa existe solo cerca de su sección (una pantalla antes y una después) y se destruye al alejarse:
+  // con las cinco vivas a la vez algunos equipos se quedan sin memoria de GPU y el navegador pierde los contextos WebGL.
+  const [roomReady, setRoomReady] = useState(false)
+  const [doorReady, setDoorReady] = useState(false)
+  const [paradeReady, setParadeReady] = useState(true) // el desfile está arriba de todo: ya cerca al cargar
   const doorRef = useRef<HTMLElement>(null)
   const finalRef = useRef<HTMLElement>(null)
   const doorFrameRef = useRef<HTMLDivElement>(null)
@@ -79,6 +83,8 @@ export function HomeJourney() {
   const [size, setSize] = useState({ w: 1000, h: 600 })
   // Marca/desmarca un desplazamiento por clic para que el snap no lo corrija (lo define el efecto del scroll).
   const programmaticRef = useRef<((done: boolean) => void) | null>(null)
+
+  useEffect(() => { if (canvasRef.current) canvasRef.current.style.visibility = progress.current > 0.0005 || mode?.reduced ? 'visible' : 'hidden' }, [paradeReady, mode])
 
   useEffect(() => {
     const onResize = () => setSize({ w: window.innerWidth, h: window.innerHeight })
@@ -166,7 +172,9 @@ export function HomeJourney() {
     const paintPrinter = (q: number, exit = 0) => printerApi.current?.paint(q, exit) // exit: tramo de salida, donde la escena se desvanece antes de que entre el cuarto
 
     gsap.registerPlugin(ScrollTrigger)
-    const lazyRoom = ScrollTrigger.create({ trigger: room, start: 'top bottom+=100%', once: true, onEnter: () => setRoomReady(true) })
+    const zone = (el: HTMLElement, set: (v: boolean) => void) => ScrollTrigger.create({ trigger: el, start: 'top bottom+=100%', end: 'bottom top-=100%', onToggle: self => set(self.isActive) })
+    const zones = [zone(room, setRoomReady), zone(door, setDoorReady), zone(parade, setParadeReady)]
+    const lazyRoom = { kill: () => zones.forEach(z => z.kill()) }
     if (reduced) {
       roomProgress.current.enter = 1
       paintParade(0.5); paintRincon(1); paintDoor(1) // la impresora (sección 2) ya viene terminada y con todo visible
@@ -284,7 +292,7 @@ export function HomeJourney() {
   return <div className="recorrido">
     <section ref={paradeRef} className="journey journey--parade" aria-label="Objetos de Gemma">
       <div className="journey-sticky">
-        {mode && <div ref={canvasRef} className="journey-canvas" style={{ visibility: 'hidden' }}><JourneyScene progress={progress} narrow={mode.narrow} reduced={mode.reduced} /></div>}
+        {mode && paradeReady && <div ref={canvasRef} className="journey-canvas" style={{ visibility: 'hidden' }}><JourneyScene progress={progress} narrow={mode.narrow} reduced={mode.reduced} /></div>}
         <Squiggles specs={PARADE_SPECS} size={size} paths={paradePaths} />
         <p ref={textRef} className="journey-text">Cada pieza nace de una idea, <em>una capa a la vez.</em></p>
       </div>
@@ -303,7 +311,7 @@ export function HomeJourney() {
       <div className="journey-sticky">
         {/* La misma puerta corrediza 3D del hero, abierta y con la luz cálida detrás. La caja .exit-door marca dónde va
             (la escena la mide para ubicarla) y es el destino de Gemi fijo. */}
-        {mode && roomReady && <div className="exit-door3d" aria-hidden="true"><DoorScene progress={exitDoor} anchor={doorFrameRef} narrow={mode.narrow} /></div>}
+        {mode && doorReady && <div className="exit-door3d" aria-hidden="true"><DoorScene progress={exitDoor} anchor={doorFrameRef} narrow={mode.narrow} /></div>}
         <div className="exit-scene"><div ref={doorFrameRef} className="exit-door" /></div>
         <div ref={washRef} className="exit-wash" aria-hidden="true" />
       </div>

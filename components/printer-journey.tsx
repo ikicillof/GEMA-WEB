@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { invalidate } from '@react-three/fiber'
+import { invalidateSafe as invalidate } from '@/lib/safe-invalidate'
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import type { MutableRefObject, RefObject } from 'react'
 import { PJ } from '@/lib/printer-timeline'
@@ -82,9 +82,10 @@ export const PrinterStage = forwardRef<PrinterApi, Props>(function PrinterStage(
     const el = section.current
     if (!el) return
     gsap.registerPlugin(ScrollTrigger)
-    const lazy = ScrollTrigger.create({ trigger: el, start: 'top bottom+=100%', once: true, onEnter: () => setReady(true) })
+    // La escena existe solo cerca de la sección (una pantalla antes y una después): se destruye al alejarse para liberar la GPU.
+    const lazy = ScrollTrigger.create({ trigger: el, start: 'top bottom+=100%', end: 'bottom top-=100%', onToggle: self => setReady(self.isActive) })
     const visible = ScrollTrigger.create({ trigger: el, start: 'top bottom', end: 'bottom top', onToggle: self => setLive(self.isActive) })
-    if (reduced) { setReady(true); drawSquiggles(paths.current, SPECS, 0.5, true) } // sin animación: todo visible, pieza terminada
+    if (reduced) drawSquiggles(paths.current, SPECS, 0.5, true) // sin animación: todo visible, pieza terminada
     return () => { lazy.kill(); visible.kill() }
   }, [section, reduced])
 

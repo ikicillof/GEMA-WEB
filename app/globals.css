@@ -33,7 +33,9 @@ button { font:inherit; }
 .header-logo--fly img { will-change:transform; }
 .nav-link { position:relative; color:rgba(255,255,255,.72); font-size:13px; font-weight:600; transition:color .2s; }
 .nav-link:hover,.nav-link--active { color:white; }
-.nav-link--active:after { content:""; position:absolute; left:0; right:0; bottom:-10px; height:3px; background:var(--gemma); border-radius:4px; }
+/* La línea de la página activa: un solo elemento que se desliza de un link al otro (lo posiciona site-header con la ruta). */
+.nav-indicator { position:absolute; left:0; bottom:-10px; height:3px; background:var(--gemma); border-radius:4px; pointer-events:none; }
+.nav-indicator--animate { transition:transform .45s cubic-bezier(.2,1,.3,1), width .45s cubic-bezier(.2,1,.3,1), opacity .25s ease; }
 .cart-button,.menu-button { display:flex; align-items:center; gap:8px; border:1px solid rgba(255,255,255,.22); border-radius:999px; padding:9px 12px; background:rgba(255,255,255,.08); color:#fff; font-size:12px; font-weight:600; cursor:pointer; transition:.2s; }
 .cart-button:hover,.menu-button:hover { background:var(--gemma); border-color:var(--gemma); }
 .cart-button b { display:grid; place-items:center; min-width:20px; height:20px; padding:0 5px; border-radius:20px; color:var(--graphite); background:var(--yellow); font-size:11px; }
@@ -41,7 +43,8 @@ button { font:inherit; }
 /* z-index 70: por encima del logo del home (60), que en el hero viaja grande y antes tapaba el menú abierto en el celular. */
 .mobile-menu { z-index:70; position:absolute; top:100%; left:0; right:0; padding:12px 20px 20px; background:var(--graphite); border-top:1px solid rgba(255,255,255,.1); }
 .mobile-link { display:block; padding:13px 0; border-bottom:1px solid rgba(255,255,255,.1); color:rgba(255,255,255,.7); font-weight:600; }
-.mobile-link--active { color:var(--gemma); }
+.mobile-link--active { position:relative; color:var(--gemma); }
+.mobile-link--active::after { content:""; position:absolute; left:0; bottom:-1px; width:44px; height:3px; background:var(--gemma); border-radius:4px; }
 .hero { position:relative; overflow:hidden; min-height:720px; padding:150px 0 92px; background:var(--graphite); color:white; }
 .hero:before { content:""; position:absolute; width:520px; height:520px; right:-170px; top:30px; border:1px solid rgba(255,77,166,.32); border-radius:42% 58% 55% 45% / 45% 44% 56% 55%; transform:rotate(16deg); }
 .hero:after { content:""; position:absolute; width:300px; height:300px; left:-150px; bottom:-190px; background:var(--violet); border-radius:50%; filter:blur(3px); opacity:.65; }
@@ -126,8 +129,8 @@ button { font:inherit; }
 .info-card strong { display:block; margin-bottom:5px; color:var(--yellow); font-size:12px; }
 .info-card span { display:block; color:rgba(255,255,255,.76); font-size:11px; line-height:1.5; }
 .site-footer { padding:62px 0 24px; background:var(--graphite); color:white; }
-.footer-grid { display:grid; grid-template-columns:1.2fr .7fr .95fr 1.25fr; gap:45px; padding-bottom:54px; }
-.footer-brand p { margin:14px 0; color:rgba(255,255,255,.56); font-size:12px; }
+.footer-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:45px; padding-bottom:54px; }
+.footer-brand p { margin:0 0 14px; max-width:16ch; color:rgba(255,255,255,.82); font-size:19px; font-weight:700; line-height:1.2; letter-spacing:-.02em; }
 .footer-dotline { display:block; width:54px; height:4px; border-radius:5px; background:linear-gradient(90deg,var(--gemma) 50%,var(--yellow) 50%); }
 .footer-label { margin:0 0 16px; color:var(--turquoise); font-size:10px; font-weight:700; letter-spacing:.17em; text-transform:uppercase; }
 .footer-links { display:flex; flex-direction:column; gap:11px; }
@@ -333,15 +336,6 @@ main { overflow-x:clip; }
 .portal-gemi--contact:after { content:'↙'; position:absolute; right:-21px; bottom:-8px; color:#FFD93D; font-size:25px; font-weight:700; transform:rotate(-18deg); }
 @keyframes gemi-contact-bounce { 0%,100% { transform:translateY(0) rotate(0); } 45% { transform:translateY(-13px) rotate(-8deg); } 70% { transform:translateY(0) rotate(4deg); } }
 
-.page-transition { position:fixed; z-index:1000; inset:0; overflow:hidden; pointer-events:auto; background:#FFD8A8; }
-.page-transition__light { position:absolute; inset:0; background:#FFF9F5; opacity:0; transition:opacity .68s ease; }
-.page-transition__leaf { position:absolute; top:0; bottom:0; width:51%; background:linear-gradient(135deg,#FF4DA6,#D62983); box-shadow:inset 0 0 0 7px rgba(255,179,220,.26); perspective:900px; transition:transform .68s cubic-bezier(.2,1,.3,1); }
-.page-transition__leaf--left { left:0; transform-origin:left center; }
-.page-transition__leaf--right { right:0; transform-origin:right center; }
-.page-transition--open .page-transition__leaf--left { transform:rotateY(-100deg); }
-.page-transition--open .page-transition__leaf--right { transform:rotateY(100deg); }
-.page-transition--open .page-transition__light { opacity:1; }
-
 .initial-loader { position:fixed; z-index:1100; inset:0; display:grid; place-items:center; background:transparent; pointer-events:none; }
 .initial-loader__logo { position:absolute; width:min(220px,58vw); height:auto; animation:loader-logo-twinkle .34s ease-in-out infinite alternate; }
 .initial-loader .gemi-sidekick { width:58px; height:68px; animation:loader-gemi-spin .68s ease-in-out both; }
@@ -365,7 +359,7 @@ main { overflow-x:clip; }
 }
 @media (prefers-reduced-motion: reduce) {
   .portal-stage { height:100vh; }
-  .page-transition,.initial-loader { display:none; }
+  .initial-loader { display:none; }
   .portal-gemi--contact { animation:none; }
   .gallery-color-wash { animation:none; transform:translate(-50%,-50%) scale(1); }
 }
@@ -570,12 +564,12 @@ html,body { overflow-x:clip; }
 
 /* Títulos con el borde del logo: trazo negro grueso, bien redondeado y "mullido" (las puntas y las uniones salen
    redondas), con un anillo blanco por fuera como la etiqueta del logo. Todo en em: acompaña el tamaño de cada título. */
-.page-title, .section-title, .product-detail h1, .journey-text, .journey-final-title, .portal-tagline, .hero-title {
+.page-title, .section-title, .product-detail h1, .journey-text, .journey-final-title, .portal-tagline, .hero-title, .stat-number {
   -webkit-text-stroke:.13em #0F0F10; paint-order:stroke fill; stroke-linejoin:round; stroke-linecap:round;
   font-weight:800; letter-spacing:-.045em;
   filter:drop-shadow(.035em 0 0 #fff) drop-shadow(-.035em 0 0 #fff) drop-shadow(0 .035em 0 #fff) drop-shadow(0 -.035em 0 #fff);
 }
-@supports not (paint-order:stroke fill) { .page-title, .section-title, .product-detail h1, .journey-text, .journey-final-title, .portal-tagline, .hero-title { -webkit-text-stroke:0; filter:none; } }
+@supports not (paint-order:stroke fill) { .page-title, .section-title, .product-detail h1, .journey-text, .journey-final-title, .portal-tagline, .hero-title, .stat-number { -webkit-text-stroke:0; filter:none; } }
 
 /* Vuela al carrito + total que cuenta */
 .fly-to-cart { position:fixed; z-index:120; top:0; left:0; width:56px; height:56px; overflow:hidden; border:3px solid #fff; border-radius:50%; box-shadow:0 8px 18px rgba(15,15,16,.32); pointer-events:none; will-change:transform,opacity; }
@@ -628,3 +622,80 @@ body.nf-active .gemi-global { visibility:hidden; }
 
 /* Estela del cursor: un canvas fijo por encima de todo, sin capturar clics; solo se muestra en escritorio (lo activa el JS) */
 .cursor-trail { display:none; position:fixed; z-index:2000; inset:0; width:100%; height:100%; pointer-events:none; }
+
+/* ---------- Quiénes somos: Gemi cuenta la historia · los 5 valores · Gemma en números ---------- */
+.sr-only { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+/* 1. Historia: tramo fijo con un globo por pantalla. Sin fondo propio: usa el degradado crema fijo del body. */
+.story { position:relative; height:700vh; }
+.story-sticky { position:sticky; top:0; height:100vh; overflow:hidden; }
+.story-intro { position:absolute; inset:0; display:grid; place-content:center; justify-items:center; gap:18px; padding:60px 20px 0; text-align:center; pointer-events:none; }
+.story-title { margin:0; font-size:clamp(44px,7vw,104px); line-height:.95; }
+.story-hint { margin:0; color:rgba(23,23,23,.62); font-size:13px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; }
+.story-gemi-target { position:absolute; left:6vw; top:54%; width:170px; height:196px; transform:translateY(-50%); pointer-events:none; } /* a dónde viaja Gemi fijo */
+.story-bubble-wrap { position:absolute; left:calc(6vw + 200px); top:46%; width:min(460px,36vw); transform:translateY(-50%); pointer-events:none; }
+.story-bubble { position:relative; padding:24px 28px; border:2.5px solid #171717; border-radius:28px 28px 28px 8px; background:#FFF9F5; box-shadow:7px 8px 0 var(--gemma); color:#171717; font-size:clamp(18px,1.7vw,24px); font-weight:600; line-height:1.35; letter-spacing:-.01em; opacity:0; will-change:transform,opacity; }
+.story-bubble::before,.story-bubble::after { content:""; position:absolute; width:0; height:0; border-style:solid; border-color:transparent; border-left-width:0; }
+.story-bubble::before { left:-26px; bottom:22px; border-width:17px 24px 17px 0; border-right-color:#171717; }
+.story-bubble::after { left:-19.5px; bottom:25.5px; border-width:13.5px 20px 13.5px 0; border-right-color:#FFF9F5; }
+.story-art { position:absolute; right:7vw; top:50%; width:min(440px,34vw); aspect-ratio:1; transform:translateY(-50%); pointer-events:none; }
+.story-art-item { position:absolute; inset:0; opacity:0; will-change:transform,opacity; }
+.story-art-item svg { display:block; width:100%; height:100%; overflow:visible; filter:drop-shadow(0 18px 20px rgba(15,15,16,.16)); }
+.story-photos { position:relative; width:100%; height:100%; }
+.story-photo { position:absolute; aspect-ratio:1; overflow:hidden; border:3px solid #171717; border-radius:22px; background:#fff; box-shadow:6px 7px 0 var(--gemma); }
+.story-photo img { display:block; width:100%; height:100%; object-fit:cover; }
+.story-photos-stars { position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
+@media (max-width:700px) {
+  .story-gemi-target { left:14px; top:auto; bottom:14px; width:78px; height:90px; transform:none; }
+  .story-art { right:auto; left:50%; top:92px; width:min(52vw,230px); transform:translateX(-50%); }
+  .story-bubble-wrap { left:14px; right:14px; top:calc(92px + min(52vw,230px) + 22px); width:auto; transform:none; }
+  .story-bubble { padding:18px 20px; font-size:17px; border-radius:24px; }
+  .story-bubble::before,.story-bubble::after { display:none; }
+}
+/* Con movimiento reducido: la historia como lista, con todos los globos y textos visibles */
+.story--static { height:auto; padding:150px 0 70px; }
+.story--static .story-title { margin:0 auto 56px; text-align:center; }
+.story-static-list { display:grid; gap:40px; max-width:1100px; margin:0 auto; padding:0 clamp(20px,6vw,80px); list-style:none; }
+.story-static-item { display:grid; grid-template-columns:84px minmax(0,1fr) minmax(0,220px); gap:30px; align-items:center; }
+.story-static-gemi .gemi-sidekick { width:76px; height:88px; }
+.story-bubble--static { opacity:1; margin:0; }
+.story-static-art { width:100%; aspect-ratio:1; }
+.story-static-art svg { display:block; width:100%; height:100%; }
+@media (max-width:700px) { .story-static-item { grid-template-columns:64px minmax(0,1fr); gap:20px 18px; } .story-static-gemi .gemi-sidekick { width:60px; height:70px; } .story-static-art { grid-column:1 / -1; max-width:200px; justify-self:center; } }
+/* 2. Valores: los objetos 3D van sobre los botones .value-slot (la escena los mide); el texto va debajo. */
+.values,.stats { position:relative; display:grid; align-items:center; min-height:100vh; padding:130px 0 90px; }
+.values-canvas { position:absolute; inset:0; pointer-events:none; }
+.values-canvas canvas { display:block; }
+.values-inner,.stats-inner { position:relative; z-index:1; }
+.values-title,.stats-title { margin:0 0 clamp(36px,7vh,76px); text-align:center; }
+.values-list { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:clamp(8px,2vw,28px); margin:0; padding:0; list-style:none; }
+.value { text-align:center; }
+.value-slot { display:block; width:100%; aspect-ratio:1; padding:0; border:0; border-radius:26px; background:transparent; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.value-slot:focus-visible { outline:3px solid var(--violet); outline-offset:4px; }
+.value-copy { min-height:124px; margin-top:6px; }
+.value-copy strong { display:block; color:#171717; font-size:clamp(18px,1.8vw,26px); font-weight:800; letter-spacing:-.04em; }
+.value-copy strong::after { content:""; display:block; width:38px; height:5px; margin:8px auto 0; border-radius:5px; background:var(--c); }
+.value-copy span { display:block; margin-top:10px; color:rgba(23,23,23,.74); font-size:14px; line-height:1.5; opacity:0; transform:translateY(8px); transition:opacity .35s ease, transform .35s cubic-bezier(.2,1,.3,1); }
+.value--active .value-copy span,.values--static .value-copy span { opacity:1; transform:none; }
+@media (max-width:700px) {
+  .values,.stats { padding:100px 0 60px; }
+  .values-list { grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 12px; }
+  .value:last-child { grid-column:1 / -1; width:50%; justify-self:center; }
+  .value-copy { min-height:0; } .value-copy span { opacity:1; transform:none; font-size:13px; }
+}
+/* 3. Gemma en números */
+.stats-list { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(16px,3vw,40px); margin:0; padding:0; list-style:none; }
+.stat { text-align:center; }
+.stat-top { position:relative; display:inline-block; }
+.stat-number { display:block; color:var(--c); font-size:clamp(30px,3.9vw,56px); line-height:1.1; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.stat-spark { position:absolute; right:-24px; top:-12px; color:var(--c); opacity:0; transform:scale(.2); }
+.stat--done .stat-spark { animation:stat-shine 1.1s cubic-bezier(.16,1,.3,1) forwards; }
+@keyframes stat-shine { 0% { opacity:0; transform:scale(.2) rotate(-30deg); } 40% { opacity:1; transform:scale(1.5) rotate(10deg); filter:drop-shadow(0 0 10px var(--c)); } 100% { opacity:1; transform:scale(1) rotate(0); filter:drop-shadow(0 0 6px var(--c)); } }
+.stat-label { margin:14px 0 0; color:#171717; font-size:15px; font-weight:700; }
+@media (max-width:700px) { .stats-list { grid-template-columns:repeat(2,minmax(0,1fr)); gap:34px 12px; } .stat-label { font-size:13px; } .stat-spark { right:-14px; } }
+@media (prefers-reduced-motion: reduce) { .stat--done .stat-spark { opacity:1; transform:none; } .value-slot { cursor:default; } }
+
+/* Títulos y números grandes con borde interno que contrasta: el trazo negro grueso pegaba las letras en una mancha. Ahora el trazo
+   es más fino, las letras respiran y una línea blanca fina (el ::after repite el texto) separa cada letra de su contorno. */
+.title-inner { position:relative; display:block; -webkit-text-stroke:.1em #0F0F10; letter-spacing:-.02em; }
+.title-inner::after { content:attr(data-text); position:absolute; left:0; top:0; width:100%; color:transparent; -webkit-text-stroke:.034em #fff; paint-order:normal; filter:none; pointer-events:none; text-align:inherit; }
+@supports not (paint-order:stroke fill) { .title-inner::after { display:none; } }
