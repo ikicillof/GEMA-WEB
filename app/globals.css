@@ -576,7 +576,7 @@ html,body { overflow-x:clip; }
   filter:drop-shadow(.04em 0 0 #0F0F10) drop-shadow(-.04em 0 0 #0F0F10) drop-shadow(0 .04em 0 #0F0F10) drop-shadow(0 -.04em 0 #0F0F10);
 }
 /* En secciones oscuras la letra ya es clara: queda el estilo original (trazo negro + aro blanco). */
-.section--dark .section-title:not(.title-inner), .contact-block .section-title:not(.title-inner) {
+.section--dark .section-title:not(.title-inner), .contact-block .section-title:not(.title-inner), .journey-final .section-title:not(.title-inner) {
   -webkit-text-stroke:.13em #0F0F10;
   filter:drop-shadow(.035em 0 0 #fff) drop-shadow(-.035em 0 0 #fff) drop-shadow(0 .035em 0 #fff) drop-shadow(0 -.035em 0 #fff);
 }
