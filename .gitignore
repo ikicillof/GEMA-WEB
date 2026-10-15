@@ -11,3 +11,8 @@ out
 .env.local
 .env.*.local
 .impeccable/
+
+# Claves de cuentas de servicio (secretas)
+*-firebase-adminsdk-*.json
+serviceAccount*.json
+service-account*.json

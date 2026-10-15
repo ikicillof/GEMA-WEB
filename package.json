@@ -5,13 +5,18 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test:firebase-admin": "node --env-file=.env.local scripts/test-firebase-admin.mjs",
+    "test:firebase-client": "node --env-file=.env.local scripts/test-firebase-client.mjs"
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.9.1",
     "@react-three/fiber": "^8.17.10",
     "@types/node": "20.14.15",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
+    "firebase": "^13.0.0",
+    "firebase-admin": "^14.5.0",
     "gsap": "^3.15.0",
     "lenis": "^1.1.13",
     "lucide-react": "0.468.0",
