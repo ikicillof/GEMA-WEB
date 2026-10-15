@@ -1,0 +1,47 @@
+rules_version = '2';
+
+// Principio: el navegador casi no toca Firestore. Todo lo que no sea el perfil propio
+// (productos, ventas, configuración, roles, auditoría) se hace desde el servidor con el
+// Admin SDK, que ignora estas reglas. Los roles NUNCA se leen de acá: viven en custom claims.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Sesión válida; si entró con email y contraseña, tiene que haber verificado el email.
+    function sesionValida() {
+      return request.auth != null
+        && (request.auth.token.firebase.sign_in_provider != 'password'
+            || request.auth.token.email_verified == true);
+    }
+
+    function esDueno(uid) {
+      return sesionValida() && request.auth.uid == uid;
+    }
+
+    match /users/{uid} {
+      // Cada persona lee solo su propio documento.
+      allow read: if esDueno(uid);
+
+      // El documento lo crea el servidor al primer ingreso (nunca el cliente: así nadie
+      // puede inventarse un documento con otro rol).
+      allow create, delete: if false;
+
+      // Solo puede cambiar nombre y recibeNovedades; rol, email y fechaAlta quedan fuera.
+      allow update: if esDueno(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombre', 'recibeNovedades'])
+        && request.resource.data.nombre is string
+        && request.resource.data.nombre.size() > 0
+        && request.resource.data.nombre.size() <= 80
+        && request.resource.data.recibeNovedades is bool;
+    }
+
+    // Estructura preparada para los próximos prompts (todo desde el servidor por ahora):
+    //   productos/{id}       catálogo
+    //   ventas/{id}          pedidos y pagos
+    //   configuracion/{id}   ajustes del sitio
+    //   auditoria/{id}       cambios de roles
+    // Cualquier otra ruta queda cerrada.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

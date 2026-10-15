@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "test:firebase-admin": "node --env-file=.env.local scripts/test-firebase-admin.mjs",
-    "test:firebase-client": "node --env-file=.env.local scripts/test-firebase-client.mjs"
+    "test:firebase-client": "node --env-file=.env.local scripts/test-firebase-client.mjs",
+    "seed:firestore": "node --env-file=.env.local scripts/seed-firestore.mjs",
+    "deploy:firestore": "firebase deploy --only firestore",
+    "deploy:rules": "node --env-file=.env.local scripts/deploy-rules.mjs",
+    "test:auth": "node --env-file=.env.local scripts/test-auth-flow.mjs"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",
@@ -23,13 +27,16 @@
     "next": "^14.2.32",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "server-only": "^0.0.1",
     "three": "^0.169.0",
-    "typescript": "5.5.4"
+    "typescript": "5.5.4",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@netlify/plugin-nextjs": "^5.16.2",
     "@types/three": "^0.169.0",
     "autoprefixer": "10.4.19",
+    "firebase-tools": "^15.34.0",
     "postcss": "8.4.40",
     "tailwindcss": "3.4.7"
   }
