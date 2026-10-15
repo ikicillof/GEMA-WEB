@@ -12,7 +12,8 @@
     "deploy:firestore": "firebase deploy --only firestore",
     "deploy:rules": "node --env-file=.env.local scripts/deploy-rules.mjs",
     "test:auth": "node --env-file=.env.local scripts/test-auth-flow.mjs",
-    "migrar:catalogo": "tsx --env-file=.env.local scripts/migrar-catalogo.ts"
+    "migrar:catalogo": "tsx --env-file=.env.local scripts/migrar-catalogo.ts",
+    "vincular:modelos": "tsx --env-file=.env.local scripts/vincular-modelos.ts"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",
