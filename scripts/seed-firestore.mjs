@@ -27,4 +27,10 @@ for (const [ruta, datos] of iniciales) {
     console.log('ya existe', ruta)
   }
 }
+// Campos de configuración que se agregan después de crear el documento (solo si faltan).
+const cfg = db.doc('configuracion/general')
+if ((await cfg.get()).get('descuentoTransferenciaPct') === undefined) {
+  await cfg.set({ descuentoTransferenciaPct: 10 }, { merge: true })
+  console.log('agregado  configuracion/general.descuentoTransferenciaPct = 10 (provisorio, lo define la dueña)')
+}
 process.exit(0)

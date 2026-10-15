@@ -1,8 +1,9 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { colorHex } from '@/lib/products'
 import { FlyToCart, type Flight } from './fly-to-cart'
+import { useAuth } from './auth-provider'
 
 let flightKey = 0
 export type CartItem = { id: string; slug: string; name: string; price: number; image: string; color: string; quantity: number }
@@ -16,6 +17,43 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cartPulse, setCartPulse] = useState(0)
   useEffect(() => { try { const stored = window.localStorage.getItem('gemma-cart'); if (stored) setItems(JSON.parse(stored)) } catch {} setHydrated(true) }, [])
   useEffect(() => { if (hydrated) window.localStorage.setItem('gemma-cart', JSON.stringify(items)) }, [items, hydrated])
+
+  // Carrito en la cuenta: al iniciar sesión se une con el de este navegador; después cada cambio se guarda en el servidor.
+  const { sesion, llamar } = useAuth()
+  const uid = sesion?.user.uid ?? null
+  const fusionadoPara = useRef<string | null>(null) // uid cuyo carrito ya se unió en esta sesión de la página
+  const ultimoGuardado = useRef('')
+  const itemsRef = useRef(items)
+  itemsRef.current = items
+  const clave = (lista: CartItem[]) => JSON.stringify(lista.map(i => [i.slug, i.color, i.quantity]))
+  useEffect(() => {
+    if (!hydrated) return
+    if (!uid) { if (fusionadoPara.current) { fusionadoPara.current = null; ultimoGuardado.current = ''; setItems([]) } return } // cerró sesión: no deja el carrito en un equipo compartido
+    if (fusionadoPara.current === uid) return
+    let cancelado = false
+    ;(async () => {
+      try {
+        const local = itemsRef.current.map(i => ({ slug: i.slug, color: i.color, cantidad: i.quantity }))
+        const res = await llamar('/api/carrito', { method: 'PUT', body: JSON.stringify({ modo: 'fusionar', items: local }) })
+        if (!res.ok || cancelado) return
+        const { items: servidor } = (await res.json()) as { items: CartItem[] }
+        fusionadoPara.current = uid
+        ultimoGuardado.current = clave(servidor)
+        setItems(servidor)
+      } catch { /* sin conexión: el carrito sigue en este navegador y se reintenta en la próxima carga */ }
+    })()
+    return () => { cancelado = true }
+  }, [uid, hydrated, llamar])
+  useEffect(() => {
+    if (!uid || fusionadoPara.current !== uid || clave(items) === ultimoGuardado.current) return
+    const t = setTimeout(async () => {
+      try {
+        const res = await llamar('/api/carrito', { method: 'PUT', body: JSON.stringify({ modo: 'reemplazar', items: items.map(i => ({ slug: i.slug, color: i.color, cantidad: i.quantity })) }) })
+        if (res.ok) ultimoGuardado.current = clave(items)
+      } catch { /* se vuelve a intentar con el próximo cambio */ }
+    }, 700)
+    return () => clearTimeout(t)
+  }, [items, uid, llamar])
   const [flights, setFlights] = useState<Flight[]>([])
   const addItem = useCallback<CartContextValue['addItem']>((item, quantity = 1, origin) => {
     // El carrito (contador, rebote del ícono, saltito de Gemi, cajón) reacciona al ATERRIZAR la foto; sin vuelo, al instante.

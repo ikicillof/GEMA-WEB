@@ -1,6 +1,7 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   GoogleAuthProvider, createUserWithEmailAndPassword, onAuthStateChanged, sendEmailVerification,
   sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, signOut, updateProfile, type User,
@@ -17,7 +18,9 @@ type AuthContext = {
   cargando: boolean
   modalAbierto: boolean
   modo: ModoLogin
-  abrirLogin: (modo?: ModoLogin) => void
+  abrirLogin: (modo?: ModoLogin, destino?: string) => void
+  /** fetch con la sesión (Authorization: Bearer) para las rutas del servidor que piden estar logueado. */
+  llamar: (url: string, init?: RequestInit) => Promise<Response>
   cerrarLogin: () => void
   setModo: (modo: ModoLogin) => void
   ingresarConGoogle: () => Promise<void>
@@ -71,6 +74,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [cargando, setCargando] = useState(true)
   const [modalAbierto, setModalAbierto] = useState(false)
   const [modo, setModo] = useState<ModoLogin>('ingresar')
+  const router = useRouter()
+  // A dónde seguir después de ingresar (ej. el checkout). Sobrevive a un recargo de página.
+  const destino = useRef<string | null>(null)
 
   useEffect(() => onAuthStateChanged(auth, async user => {
     // Mientras no verifique su email, la cuenta no cuenta como sesión iniciada.
@@ -89,7 +95,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCargando(false)
   }), [])
 
-  const abrirLogin = useCallback((m: ModoLogin = 'ingresar') => { setModo(m); setModalAbierto(true) }, [])
+  useEffect(() => { try { destino.current = window.sessionStorage.getItem('gemma-post-login') } catch {} }, [])
+  useEffect(() => {
+    if (!sesion || !destino.current) return
+    const ir = destino.current
+    destino.current = null
+    try { window.sessionStorage.removeItem('gemma-post-login') } catch {}
+    router.push(ir)
+  }, [sesion, router])
+
+  const abrirLogin = useCallback((m: ModoLogin = 'ingresar', ir?: string) => {
+    if (ir && ir.startsWith('/') && !ir.startsWith('//')) { destino.current = ir; try { window.sessionStorage.setItem('gemma-post-login', ir) } catch {} }
+    setModo(m); setModalAbierto(true)
+  }, [])
+  const userActual = sesion?.user ?? null
+  const llamar = useCallback(async (url: string, init: RequestInit = {}) => {
+    if (!userActual) throw new Error('Sin sesión')
+    const token = await userActual.getIdToken()
+    return fetch(url, { ...init, headers: { ...(init.body ? { 'Content-Type': 'application/json' } : {}), ...init.headers, Authorization: `Bearer ${token}` } })
+  }, [userActual])
   const cerrarLogin = useCallback(() => setModalAbierto(false), [])
 
   const ingresarConGoogle = useCallback(async () => {
@@ -153,9 +177,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const cerrarSesion = useCallback(async () => { await signOut(auth) }, [])
 
   const valor = useMemo<AuthContext>(() => ({
-    sesion, cargando, modalAbierto, modo, abrirLogin, cerrarLogin, setModo, ingresarConGoogle, ingresarConEmail,
+    sesion, cargando, modalAbierto, modo, abrirLogin, llamar, cerrarLogin, setModo, ingresarConGoogle, ingresarConEmail,
     registrar, reenviarVerificacion, recuperarPassword, cerrarSesion,
-  }), [sesion, cargando, modalAbierto, modo, abrirLogin, cerrarLogin, ingresarConGoogle, ingresarConEmail, registrar, reenviarVerificacion, recuperarPassword, cerrarSesion])
+  }), [sesion, cargando, modalAbierto, modo, abrirLogin, llamar, cerrarLogin, ingresarConGoogle, ingresarConEmail, registrar, reenviarVerificacion, recuperarPassword, cerrarSesion])
 
   return <Ctx.Provider value={valor}>{children}</Ctx.Provider>
 }

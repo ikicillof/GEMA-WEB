@@ -13,6 +13,10 @@ const REVALIDAR_DATOS = 20
 const texto = (v: unknown, porDefecto = '') => (typeof v === 'string' ? v : porDefecto)
 const listaTexto = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [])
 
+/** Producto + datos de logística. SOLO servidor: nunca se manda al navegador. */
+export type ProductoServidor = Product & { pesoGramos: number | null; altoCm: number | null; anchoCm: number | null; largoCm: number | null }
+const positivo = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null)
+
 /** Documento de Firestore -> producto de la web. Devuelve null si está oculto o está mal cargado. */
 function aProducto(slug: string, d: DocumentData): Product | null {
   if (d.activo !== true) return null
@@ -32,24 +36,36 @@ function aProducto(slug: string, d: DocumentData): Product | null {
   }
 }
 
+function aProductoServidor(slug: string, d: DocumentData): ProductoServidor | null {
+  const base = aProducto(slug, d)
+  return base && { ...base, pesoGramos: positivo(d.pesoGramos), altoCm: positivo(d.altoCm), anchoCm: positivo(d.anchoCm), largoCm: positivo(d.largoCm) }
+}
+
 const leerCatalogo = unstable_cache(
   async () => {
     // Un solo orderBy no necesita índice compuesto; lo oculto (activo) se filtra acá.
     const snap = await adminDb().collection('products').orderBy('orden').get()
-    return snap.docs.flatMap(doc => { const p = aProducto(doc.id, doc.data()); return p ? [p] : [] })
+    return snap.docs.flatMap(doc => { const p = aProductoServidor(doc.id, doc.data()); return p ? [p] : [] })
   },
   ['catalogo-v1'],
   { revalidate: REVALIDAR_DATOS, tags: ['catalogo'] },
 )
 
-/** Productos activos, ordenados. Si Firestore no responde, la tienda sigue con el catálogo inicial. */
-export async function getProductos(): Promise<Product[]> {
+const sinLogistica = ({ pesoGramos, altoCm, anchoCm, largoCm, ...producto }: ProductoServidor): Product => producto
+
+/** Productos activos, ordenados, con logística (para calcular precios y envíos en el servidor). */
+export async function getProductosServidor(): Promise<ProductoServidor[]> {
   try {
     return await leerCatalogo()
   } catch (e) {
     console.error('[catalogo] Firestore no respondió; uso el catálogo inicial:', (e as Error).message)
-    return catalogoInicial
+    return catalogoInicial.map(p => ({ ...p, pesoGramos: null, altoCm: null, anchoCm: null, largoCm: null }))
   }
+}
+
+/** Productos activos, ordenados, para la web (sin datos de logística). Si Firestore no responde, usa el catálogo inicial. */
+export async function getProductos(): Promise<Product[]> {
+  return (await getProductosServidor()).map(sinLogistica)
 }
 
 export async function getProducto(slug: string): Promise<Product | undefined> {
@@ -62,3 +78,14 @@ export function revalidarCatalogo() {
   revalidatePath('/tienda')
   revalidatePath('/producto/[slug]', 'page')
 }
+
+/** Ajustes de la tienda (configuracion/general). Cambian poco: caché de 1 minuto. */
+export const getConfiguracion = unstable_cache(
+  async () => {
+    const d = (await adminDb().doc('configuracion/general').get()).data() ?? {}
+    const pct = typeof d.descuentoTransferenciaPct === 'number' && d.descuentoTransferenciaPct >= 0 && d.descuentoTransferenciaPct <= 50 ? d.descuentoTransferenciaPct : 10
+    return { descuentoTransferenciaPct: pct }
+  },
+  ['configuracion-v1'],
+  { revalidate: 60, tags: ['configuracion'] },
+)
