@@ -1,5 +1,3 @@
-import { products } from '@/lib/products'
-
 // Atlas único con las fotos principales del catálogo para el túnel de /tienda. Se arma en segundo plano apenas carga
 // cualquier página (y se precarga el código del túnel), así cuando el usuario navega al catálogo ya está todo listo y
 // no se carga ninguna imagen durante el viaje.
@@ -15,7 +13,8 @@ export function preloadTunnel(): Promise<void> {
   if (loading) return loading
   loading = (async () => {
     const cell = window.matchMedia('(max-width: 700px)').matches ? 128 : 256
-    const urls = products.map(p => p.images[0]).filter((u, i, all) => u && all.indexOf(u) === i).slice(0, ATLAS_COLUMNS * ATLAS_ROWS)
+    const { portadas } = await fetch('/api/catalogo/portadas').then(r => { if (!r.ok) throw new Error('portadas'); return r.json() as Promise<{ portadas: string[] }> })
+    const urls = portadas.filter((u, i, all) => u && all.indexOf(u) === i).slice(0, ATLAS_COLUMNS * ATLAS_ROWS)
     const images = await Promise.all(urls.map(url => new Promise<HTMLImageElement | null>(resolve => {
       const img = new Image(); img.onload = () => resolve(img); img.onerror = () => resolve(null); img.src = url
     })))
