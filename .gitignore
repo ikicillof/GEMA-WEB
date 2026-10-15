@@ -5,3 +5,9 @@ npm-debug.log*
 .netlify
 out
 *.tsbuildinfo
+
+# Variables de entorno (secretos): nunca se suben
+.env
+.env.local
+.env.*.local
+.impeccable/
