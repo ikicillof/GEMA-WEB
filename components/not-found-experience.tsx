@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { pageOrigin } from '@/lib/page-origin'
 import { GemiSidekick } from './gemi-sidekick'
 
 const NotFoundScene = dynamic(() => import('./not-found-scene'), { ssr: false })
@@ -85,6 +86,7 @@ export function NotFoundExperience() {
       }
       requestAnimationFrame(step)
     })
+    pageOrigin.from404 = true // el túnel de entrada a la tienda se muestra solo viniendo de acá
     router.push('/tienda')
     const until = performance.now() + 2500
     const wait = () => {
