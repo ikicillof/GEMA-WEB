@@ -1,4 +1,4 @@
-// Atlas único con las fotos principales del catálogo para el túnel de /tienda. Se arma en segundo plano apenas carga
+// Atlas único con las fotos principales del catálogo para la versión completa del túnel (la primera vez por visita que se entra a la tienda). Se arma en segundo plano apenas carga
 // cualquier página (y se precarga el código del túnel), así cuando el usuario navega al catálogo ya está todo listo y
 // no se carga ninguna imagen durante el viaje.
 export const ATLAS_COLUMNS = 4
@@ -12,7 +12,9 @@ export const getTunnelAtlas = () => atlas
 export function preloadTunnel(): Promise<void> {
   if (loading) return loading
   loading = (async () => {
-    const cell = window.matchMedia('(max-width: 700px)').matches ? 128 : 256
+    // En celular el túnel es siempre la versión rápida (sin fotos): alcanza con dejar en caché el código, sin armar el atlas.
+    if (window.matchMedia('(max-width: 700px)').matches) { await import('@/components/tunnel-scene'); return }
+    const cell = 256
     const { portadas } = await fetch('/api/catalogo/portadas').then(r => { if (!r.ok) throw new Error('portadas'); return r.json() as Promise<{ portadas: string[] }> })
     const urls = portadas.filter((u, i, all) => u && all.indexOf(u) === i).slice(0, ATLAS_COLUMNS * ATLAS_ROWS)
     const images = await Promise.all(urls.map(url => new Promise<HTMLImageElement | null>(resolve => {

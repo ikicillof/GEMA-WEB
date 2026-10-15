@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { invalidate } from '@react-three/fiber'
+import { invalidateSafe as invalidate } from '@/lib/safe-invalidate'
 import { useEffect, useRef, useState } from 'react'
 import type { HeroDoorProgress } from './hero-door-scene'
 

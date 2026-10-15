@@ -6,7 +6,7 @@ import { colorHex } from '@/lib/products'
 import { useCart } from './cart-context'
 import { GemiSidekick } from './gemi-sidekick'
 
-type Mood = 'neutral' | 'happy' | 'thinking' | 'laughing'
+type Mood = 'neutral' | 'happy' | 'thinking' | 'laughing' | 'surprised' | 'wink' | 'relaxed'
 
 const phrases = ['Cada rincón merece un poquito de magia', '¿Buscamos tu próximo rincón?', 'Ahora sí quedó lindo', 'Un poquito de color y cambia todo']
 const sparkColors = ['#FF4DA6', '#6D28D9', '#00E6D2', '#FFD93D']
@@ -19,6 +19,7 @@ export function GemiGlobal() {
   const [mood, setMood] = useState<Mood>(items.length ? 'happy' : 'neutral')
   const [cardHover, setCardHover] = useState(false)
   const [bubble, setBubble] = useState('')
+  const [override, setOverride] = useState<Mood | null>(null) // expresión que fija una página (p. ej. Quiénes somos); null = la de siempre
   const [storeBottom, setStoreBottom] = useState(96)
   const lastPhrase = useRef(-1)
   const bubbleTimer = useRef<number | null>(null)
@@ -59,6 +60,13 @@ export function GemiGlobal() {
   }, [items.length, isOpen, cartPulse])
 
   useEffect(() => {
+    const onMood = (event: Event) => setOverride((event as CustomEvent<{ mood?: Mood | null }>).detail?.mood ?? null)
+    window.addEventListener('gemma-gemi-mood', onMood)
+    return () => window.removeEventListener('gemma-gemi-mood', onMood)
+  }, [])
+
+  useEffect(() => {
+    if (pathname.startsWith('/quienes-somos')) { setTone('pink'); setCustomColor('#FF4DA6'); return }
     if (pathname.startsWith('/producto/')) { setTone('violet'); setCustomColor('#00E6D2'); return }
     if (pathname === '/') { setTone('pink'); setCustomColor('#FF4DA6'); return }
     if (pathname === '/tienda') { setTone('violet'); setCustomColor('#6D28D9'); return }
@@ -104,6 +112,7 @@ export function GemiGlobal() {
     if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleTap() }
   }
   const effectiveColor = isOpen ? '#FFD93D' : customColor
-  const className = ['gemi-global', pathname === '/tienda' ? 'gemi-global--store' : '', isOpen ? 'gemi-global--cart-open' : '', cardHover ? 'gemi-global--card-hover' : '', mood === 'happy' ? 'gemi-global--happy' : '', mood === 'thinking' ? 'gemi-global--thinking' : '', mood === 'laughing' ? 'gemi-global--laughing' : '', bubble ? 'gemi-global--speaking' : ''].filter(Boolean).join(' ')
-  return <button type="button" className={className} style={{ '--gemi-fill': effectiveColor, '--store-bottom': `${storeBottom}px` } as React.CSSProperties} aria-label="Gemi" aria-pressed={mood === 'laughing'} onClick={handleTap} onKeyDown={handleKeyDown}><GemiSidekick tone={tone} mood={mood} customColor={effectiveColor} /><span className="gemi-tap-spark gemi-tap-spark--one" style={{ '--spark-color': sparkColors[0] } as React.CSSProperties} /><span className="gemi-tap-spark gemi-tap-spark--two" style={{ '--spark-color': sparkColors[1] } as React.CSSProperties} /><span className="gemi-tap-spark gemi-tap-spark--three" style={{ '--spark-color': sparkColors[2] } as React.CSSProperties} /><span className="gemi-tap-spark gemi-tap-spark--four" style={{ '--spark-color': sparkColors[3] } as React.CSSProperties} />{bubble && <span className="gemi-speech" role="status" aria-live="polite">{bubble}</span>}</button>
+  const shown = override ?? mood
+  const className = ['gemi-global', pathname === '/tienda' ? 'gemi-global--store' : '', isOpen ? 'gemi-global--cart-open' : '', cardHover ? 'gemi-global--card-hover' : '', shown === 'happy' ? 'gemi-global--happy' : '', shown === 'thinking' ? 'gemi-global--thinking' : '', shown === 'laughing' ? 'gemi-global--laughing' : '', bubble ? 'gemi-global--speaking' : ''].filter(Boolean).join(' ')
+  return <button type="button" className={className} style={{ '--gemi-fill': effectiveColor, '--store-bottom': `${storeBottom}px` } as React.CSSProperties} aria-label="Gemi" aria-pressed={mood === 'laughing'} onClick={handleTap} onKeyDown={handleKeyDown}><GemiSidekick tone={tone} mood={shown} customColor={effectiveColor} /><span className="gemi-tap-spark gemi-tap-spark--one" style={{ '--spark-color': sparkColors[0] } as React.CSSProperties} /><span className="gemi-tap-spark gemi-tap-spark--two" style={{ '--spark-color': sparkColors[1] } as React.CSSProperties} /><span className="gemi-tap-spark gemi-tap-spark--three" style={{ '--spark-color': sparkColors[2] } as React.CSSProperties} /><span className="gemi-tap-spark gemi-tap-spark--four" style={{ '--spark-color': sparkColors[3] } as React.CSSProperties} />{bubble && <span className="gemi-speech" role="status" aria-live="polite">{bubble}</span>}</button>
 }

@@ -3,16 +3,19 @@
 import dynamic from 'next/dynamic'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { invalidate } from '@react-three/fiber'
+import { invalidateSafe as invalidate } from '@/lib/safe-invalidate'
 import { useEffect, useRef, useState } from 'react'
 import type { MutableRefObject } from 'react'
-import { Color } from 'three'
 import type { RoomProgress } from './room-scene'
 import { PARADE_TIMING } from './journey-scene'
+import { PrinterStage } from './printer-journey'
+import type { PrinterApi } from './printer-journey'
+import { DEFAULT_DOG_COLOR, PJ } from '@/lib/printer-timeline'
 import { easeInOutSine, getLenis } from './smooth-scroll'
+import { Squiggles, drawSquiggles } from './squiggles'
+import type { Spec } from './squiggles'
 
 const JourneyScene = dynamic(() => import('./journey-scene'), { ssr: false })
-const GemiScene = dynamic(() => import('./gemi-scene'), { ssr: false })
 const RoomScene = dynamic(() => import('./room-scene'), { ssr: false })
 // La misma puerta 3D del hero (el modelo ya está cargado y cacheado), para la salida de la sección 4.
 const DoorScene = dynamic(() => import('./hero-door-scene'), { ssr: false })
@@ -31,10 +34,6 @@ const ROOM_STOP = (ROOM_TEXT_IN + 1) / 2 + 0.02 // cuarto encendido con el texto
 const DOOR_STOP = DOOR.CLOSE_FROM // Gemi ya saludó en la puerta abierta, justo antes de que se cierre
 // Las animaciones de cada sección siguen al scroll con retardo (más lentas y suaves).
 const SCRUB = 1.5
-// Firuletes de formas distintas. Posición (x, y) como fracción de pantalla; largo y amplitud en "unidades" (1000 = ancho de referencia).
-// Se dibujan hasta la mitad de su ventana de scroll [from, to] y después se borran.
-type Kind = 'loop' | 'coil' | 'wave' | 'scribble' | 'spiral'
-type Spec = { kind: Kind; x: number; y: number; len: number; angle: number; n: number; amp: number; color: string; from: number; to: number; mobile: boolean }
 const PARADE_SPECS: Spec[] = [
   { kind: 'loop', x: 0.04, y: 0.14, len: 380, angle: 8, n: 6, amp: 24, color: '#00E6D2', from: 0, to: 0.45, mobile: true },
   { kind: 'wave', x: 0.45, y: 0.135, len: 260, angle: -4, n: 3, amp: 16, color: '#6D28D9', from: 0.06, to: 0.5, mobile: false },
@@ -45,15 +44,6 @@ const PARADE_SPECS: Spec[] = [
   { kind: 'loop', x: 0.975, y: 0.36, len: 320, angle: 98, n: 6, amp: 17, color: '#6D28D9', from: 0.3, to: 0.8, mobile: true },
   { kind: 'spiral', x: 0.9, y: 0.9, len: 110, angle: 0, n: 2.5, amp: 0, color: '#FF4DA6', from: 0.55, to: 1, mobile: false },
   { kind: 'spiral', x: 0.09, y: 0.25, len: 90, angle: 0, n: 3, amp: 0, color: '#6D28D9', from: 0.1, to: 0.55, mobile: false },
-]
-// Sección 2: en los bordes, sin pasar por el centro (Gemi), la izquierda (texto) ni la derecha (colores).
-const GEMI_SPECS: Spec[] = [
-  { kind: 'spiral', x: 0.2, y: 0.19, len: 100, angle: 0, n: 3, amp: 0, color: '#6D28D9', from: 0.1, to: 0.6, mobile: false },
-  { kind: 'wave', x: 0.36, y: 0.14, len: 300, angle: -3, n: 4, amp: 14, color: '#FF4DA6', from: 0.15, to: 0.7, mobile: true },
-  { kind: 'loop', x: 0.7, y: 0.16, len: 260, angle: -10, n: 5, amp: 18, color: '#00E6D2', from: 0.2, to: 0.75, mobile: false },
-  { kind: 'coil', x: 0.08, y: 0.91, len: 320, angle: 4, n: 12, amp: 9, color: '#FFD93D', from: 0.25, to: 0.85, mobile: true },
-  { kind: 'scribble', x: 0.55, y: 0.93, len: 260, angle: -5, n: 4, amp: 16, color: '#6D28D9', from: 0.3, to: 0.9, mobile: false },
-  { kind: 'spiral', x: 0.92, y: 0.86, len: 90, angle: 0, n: 3, amp: 0, color: '#00E6D2', from: 0.35, to: 0.9, mobile: true },
 ]
 // Sección 3: en los márgenes, fuera de la pared del rincón.
 const RINCON_SPECS: Spec[] = [
@@ -66,76 +56,24 @@ const RINCON_SPECS: Spec[] = [
 ]
 
 
-// Colores de Gemi: los fuertes de la marca y de los productos (sin blanco, negro, pasteles ni tonos apagados).
-type GemiColor = { name: string; hex: string }
-const GEMI_PALETTE: GemiColor[] = [
-  { name: 'Rosa', hex: '#FF4DA6' }, { name: 'Violeta', hex: '#6D28D9' }, { name: 'Turquesa', hex: '#00E6D2' }, { name: 'Amarillo', hex: '#FFD93D' },
-  { name: 'Rojo', hex: '#EF4444' }, { name: 'Fucsia', hex: '#D946EF' }, { name: 'Azul', hex: '#2563EB' }, { name: 'Celeste', hex: '#38BDF8' },
-  { name: 'Verde', hex: '#22C55E' }, { name: 'Naranja', hex: '#F97316' },
-]
-const rgb = (hex: string) => { const n = parseInt(hex.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255].map(v => v / 255) }
-const luminance = (hex: string) => { const [r, g, b] = rgb(hex).map(c => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)); return 0.2126 * r + 0.7152 * g + 0.0722 * b }
-const hue = (hex: string) => {
-  const [r, g, b] = rgb(hex), max = Math.max(r, g, b), d = max - Math.min(r, g, b)
-  const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4
-  return (h * 60 + 360) % 360
-}
-// 3 colores al azar que se lean sobre el crema (contraste ≥ 2:1; turquesa y amarillo no llegan) y bien distintos entre sí (≥ 90° de tono).
-function pickGemiColors(): GemiColor[] {
-  const cream = luminance('#FFF9F5')
-  const ok = GEMI_PALETTE.filter(c => (cream + 0.05) / (luminance(c.hex) + 0.05) >= 2)
-  const apart = (a: GemiColor, b: GemiColor) => { const d = Math.abs(hue(a.hex) - hue(b.hex)); return Math.min(d, 360 - d) >= 90 }
-  const triples: GemiColor[][] = []
-  for (let i = 0; i < ok.length; i++) for (let j = i + 1; j < ok.length; j++) for (let k = j + 1; k < ok.length; k++)
-    if (apart(ok[i], ok[j]) && apart(ok[i], ok[k]) && apart(ok[j], ok[k])) triples.push([ok[i], ok[j], ok[k]])
-  return triples[Math.floor(Math.random() * triples.length)].sort(() => Math.random() - 0.5)
-}
-
-function shapePath({ kind, x: fx, y: fy, len, angle, n, amp }: Spec, w: number, h: number) {
-  const u = Math.min(w, h * 1.7) / 1000, L = len * u, A = amp * u, r = (angle * Math.PI) / 180
-  const cos = Math.cos(r), sin = Math.sin(r), steps = Math.ceil(n * 28)
-  let d = ''
-  for (let i = 0; i <= steps; i++) {
-    const s = i / steps, th = s * n * 2 * Math.PI
-    let x: number, y: number
-    if (kind === 'spiral') { x = (L / 2) * s * Math.cos(th); y = (L / 2) * s * Math.sin(th) }
-    else if (kind === 'wave') { x = s * L; y = A * Math.sin(th) }
-    else if (kind === 'scribble') { x = s * L + A * Math.cos(th); y = A * Math.sin(2 * th) }
-    else { const a = L / (n * 2 * Math.PI); x = a * th - A * Math.sin(th); y = -A * Math.cos(th) + Math.sin(s * Math.PI) * L * 0.05 } // loop y coil: trocoide
-    d += `${i ? 'L' : 'M'}${(fx * w + x * cos - y * sin).toFixed(1)} ${(fy * h + x * sin + y * cos).toFixed(1)}`
-  }
-  return d
-}
-// Dibuja hasta la mitad de la ventana [from, to] y borra en la otra mitad; con movimiento reducido quedan dibujados.
-function drawSquiggles(paths: (SVGPathElement | null)[], specs: Spec[], p: number, reduced: boolean) {
-  specs.forEach(({ from, to }, i) => {
-    const el = paths[i]; if (!el) return
-    const mid = (from + to) / 2
-    el.style.strokeDashoffset = String(reduced ? 0 : p < mid ? 1 - clamp01((p - from) / (mid - from)) : -clamp01((p - mid) / (to - mid)))
-  })
-}
-function Squiggles({ specs, size, paths }: { specs: Spec[]; size: { w: number; h: number }; paths: MutableRefObject<(SVGPathElement | null)[]> }) {
-  return <svg className="journey-squiggles" viewBox={`0 0 ${size.w} ${size.h}`} aria-hidden="true">
-    {specs.map((spec, i) => <path key={i} ref={el => { paths.current[i] = el }} d={shapePath(spec, size.w, size.h)} stroke={spec.color} pathLength={1} className={spec.mobile ? 'squiggle' : 'squiggle squiggle--extra'} />)}
-  </svg>
-}
-
 export function HomeJourney() {
   const paradeRef = useRef<HTMLElement>(null)
-  const gemiRef = useRef<HTMLElement>(null)
+  const printerRef = useRef<HTMLElement>(null)
+  const printerApi = useRef<PrinterApi>(null)
+  const dogColor = useRef(DEFAULT_DOG_COLOR) // color del Perro Globo que se elige en la impresora (sección 2); el cuarto de la sección 3 lo usa
   const textRef = useRef<HTMLParagraphElement>(null)
-  const gemiTextRef = useRef<HTMLParagraphElement>(null)
   const canvasRef = useRef<HTMLDivElement>(null)
-  const gemi3dRef = useRef<HTMLDivElement>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
   const paradePaths = useRef<(SVGPathElement | null)[]>([])
-  const gemiPaths = useRef<(SVGPathElement | null)[]>([])
   const progress = useRef(0)
   const rinconRef = useRef<HTMLElement>(null)
   const rinconTextRef = useRef<HTMLParagraphElement>(null)
   const rinconPaths = useRef<(SVGPathElement | null)[]>([])
   const roomProgress = useRef<RoomProgress>({ rincon: 0, enter: 0, exit: 0 })
-  const [roomReady, setRoomReady] = useState(false) // el cuarto 3D se carga recién al acercarse a la sección 3
+  // Cada escena 3D a pantalla completa existe solo cerca de su sección (una pantalla antes y una después) y se destruye al alejarse:
+  // con las cinco vivas a la vez algunos equipos se quedan sin memoria de GPU y el navegador pierde los contextos WebGL.
+  const [roomReady, setRoomReady] = useState(false)
+  const [doorReady, setDoorReady] = useState(false)
+  const [paradeReady, setParadeReady] = useState(true) // el desfile está arriba de todo: ya cerca al cargar
   const doorRef = useRef<HTMLElement>(null)
   const finalRef = useRef<HTMLElement>(null)
   const doorFrameRef = useRef<HTMLDivElement>(null)
@@ -143,20 +81,14 @@ export function HomeJourney() {
   const washRef = useRef<HTMLDivElement>(null)
   const [mode, setMode] = useState<{ narrow: boolean; reduced: boolean } | null>(null)
   const [size, setSize] = useState({ w: 1000, h: 600 })
-  const [live, setLive] = useState(false)
-  const [colors, setColors] = useState<GemiColor[]>([])
-  const [active, setActive] = useState(0)
-  const colorsRef = useRef<GemiColor[]>([])
-  const colorRef = useRef(new Color('#FF4DA6')) // color actual del Gemi 3D (lo lee la escena en cada cuadro)
   // Marca/desmarca un desplazamiento por clic para que el snap no lo corrija (lo define el efecto del scroll).
   const programmaticRef = useRef<((done: boolean) => void) | null>(null)
+
+  useEffect(() => { if (canvasRef.current) canvasRef.current.style.visibility = progress.current > 0.0005 || mode?.reduced ? 'visible' : 'hidden' }, [paradeReady, mode])
 
   useEffect(() => {
     const onResize = () => setSize({ w: window.innerWidth, h: window.innerHeight })
     onResize(); window.addEventListener('resize', onResize)
-    // Se eligen en el cliente (al azar) para no desincronizar el HTML del servidor.
-    const picked = pickGemiColors()
-    colorsRef.current = picked; colorRef.current.set(picked[0].hex); setColors(picked)
     setMode({ narrow: window.matchMedia('(max-width: 700px)').matches, reduced: window.matchMedia('(prefers-reduced-motion: reduce)').matches })
     return () => window.removeEventListener('resize', onResize)
   }, [])
@@ -169,8 +101,8 @@ export function HomeJourney() {
   }, [])
 
   useEffect(() => {
-    const parade = paradeRef.current, gemiSection = gemiRef.current, room = rinconRef.current, door = doorRef.current, final = finalRef.current
-    if (!parade || !gemiSection || !room || !door || !final || !mode) return
+    const parade = paradeRef.current, printer = printerRef.current, room = rinconRef.current, door = doorRef.current, final = finalRef.current
+    if (!parade || !printer || !room || !door || !final || !mode) return
     const { reduced } = mode
     const gemiNode = () => document.querySelector<HTMLElement>('.gemi-global')
     const top = (el: HTMLElement) => el.getBoundingClientRect().top + window.scrollY
@@ -235,53 +167,17 @@ export function HomeJourney() {
       invalidate()
     }
 
-    // Sección 2 (q de 0 a 1): 0 → 0,1 el Gemi ilustrado viaja al centro · 0,1 → 0,14 se funde en el 3D
-    // · 0,9 → 0,94 el 3D vuelve a ilustrado · 0,94 → 1 regresa a la esquina.
-    // El color sigue 3 tramos iguales (q × 3): fundido suave de ±0,04 de q alrededor de cada cambio.
-    const palette = colorsRef.current.map(c => new Color(c.hex))
-    let wasLive = false, lastActive = -1
-    const resetGemi = (g: HTMLElement) => { g.style.translate = ''; g.style.scale = ''; g.style.opacity = ''; g.style.pointerEvents = '' }
-    const paintColor = (q: number) => {
-      const c = q * 3
-      colorRef.current.copy(palette[0])
-      for (const b of [1, 2]) colorRef.current.lerp(palette[b], reduced ? (c >= b ? 1 : 0) : ease(clamp01((c - b + 0.12) / 0.24)))
-      const idx = Math.min(2, Math.floor(c))
-      if (idx !== lastActive) {
-        lastActive = idx; setActive(idx)
-        // El Gemi ilustrado toma el mismo color, así al ir y volver de la esquina coincide con el 3D.
-        window.dispatchEvent(new CustomEvent('gemma-product-color', { detail: { hex: colorsRef.current[idx].hex } }))
-      }
-    }
-    const paintGemi = (q: number) => {
-      const fade = clamp01((q - 0.1) / 0.04) * clamp01((0.94 - q) / 0.04)
-      const menu = reduced ? 1 : clamp01((q - 0.14) / 0.03) * clamp01((0.9 - q) / 0.03)
-      if (!reduced) paintColor(q)
-      invalidate()
-      if (gemiTextRef.current) gemiTextRef.current.style.opacity = String(reduced ? 1 : clamp01((q - 0.02) / 0.04) * clamp01((0.3 - q) / 0.04))
-      if (gemi3dRef.current) gemi3dRef.current.style.opacity = String(reduced ? 1 : fade)
-      if (menuRef.current) { menuRef.current.style.opacity = String(menu); menuRef.current.style.pointerEvents = menu > 0.5 ? 'auto' : 'none'; menuRef.current.inert = menu <= 0.5 }
-      drawSquiggles(gemiPaths.current, GEMI_SPECS, q, reduced)
-      const isLive = fade > 0
-      if (isLive !== wasLive) { wasLive = isLive; setLive(isLive) }
-
-      const g = document.querySelector<HTMLElement>('.gemi-global'), box = gemi3dRef.current
-      if (!g || !box || reduced) return
-      const k = q < 0.5 ? ease(clamp01(q / 0.1)) : ease(clamp01((1 - q) / 0.06))
-      if (k <= 0) { resetGemi(g); return }
-      // Misma lógica que el logo: posición en reposo (sin transformar) → centro del Gemi 3D, interpolado con el scroll.
-      g.style.translate = 'none'; g.style.scale = 'none'
-      const r = g.getBoundingClientRect(), t = box.getBoundingClientRect()
-      const dx = t.left + t.width / 2 - (r.left + r.width / 2), dy = t.top + t.height / 2 - (r.top + r.height / 2)
-      g.style.translate = `${dx * k}px ${dy * k}px`
-      g.style.scale = String(1 + (t.height / 1.3 / r.height - 1) * k)
-      g.style.opacity = String(1 - fade); g.style.pointerEvents = fade > 0.5 ? 'none' : ''
-    }
+    // Sección 2 (q de 0 a 1): la impresora 3D. Su contenido (escena, textos, menú de colores y firuletes) lo pinta
+    // PrinterStage a partir de este progreso; Gemi fijo se queda en su esquina durante toda la sección.
+    const paintPrinter = (q: number, exit = 0) => printerApi.current?.paint(q, exit) // exit: tramo de salida, donde la escena se desvanece antes de que entre el cuarto
 
     gsap.registerPlugin(ScrollTrigger)
-    const lazyRoom = ScrollTrigger.create({ trigger: room, start: 'top bottom+=100%', once: true, onEnter: () => setRoomReady(true) })
+    const zone = (el: HTMLElement, set: (v: boolean) => void) => ScrollTrigger.create({ trigger: el, start: 'top bottom+=100%', end: 'bottom top-=100%', onToggle: self => set(self.isActive) })
+    const zones = [zone(room, setRoomReady), zone(door, setDoorReady), zone(parade, setParadeReady)]
+    const lazyRoom = { kill: () => zones.forEach(z => z.kill()) }
     if (reduced) {
       roomProgress.current.enter = 1
-      paintParade(0.5); paintGemi(0.5); paintColor(0); paintRincon(1); paintDoor(1)
+      paintParade(0.5); paintRincon(1); paintDoor(1) // la impresora (sección 2) ya viene terminada y con todo visible
       // Puerta ya cerrada: Gemi fijo se oculta desde la puerta hasta el final del home.
       const st = ScrollTrigger.create({ trigger: door, start: 'top center', onToggle: self => { const g = gemiNode(); if (g) g.style.visibility = self.isActive || self.progress >= 1 ? 'hidden' : '' }, endTrigger: final, end: 'bottom top' })
       return () => { st.kill(); lazyRoom.kill(); const g = gemiNode(); if (g) g.style.visibility = '' }
@@ -289,7 +185,7 @@ export function HomeJourney() {
     const a = { p: 0 }, b = { q: 0 }, c = { q: 0 }, d = { r: 0 }
     const ctx = gsap.context(() => {
       gsap.to(a, { p: 1, ease: 'none', onUpdate: () => paintParade(within(parade, a.p)), scrollTrigger: { trigger: parade, start: 'top top', end: 'bottom bottom', scrub: SCRUB, invalidateOnRefresh: true } })
-      gsap.to(b, { q: 1, ease: 'none', onUpdate: () => paintGemi(within(gemiSection, b.q)), scrollTrigger: { trigger: gemiSection, start: 'top top', end: 'bottom bottom', scrub: SCRUB, invalidateOnRefresh: true } })
+      gsap.to(b, { q: 1, ease: 'none', onUpdate: () => paintPrinter(within(printer, b.q), tail(printer, b.q)), scrollTrigger: { trigger: printer, start: 'top top', end: 'bottom bottom', scrub: SCRUB, invalidateOnRefresh: true } })
       // El cuarto, en su tramo de salida, se disuelve en la niebla (y se va el texto) mientras entra la puerta.
       gsap.to(c, { q: 1, ease: 'none', onUpdate: () => { roomProgress.current.exit = tail(room, c.q); paintRincon(within(room, c.q)) }, scrollTrigger: { trigger: room, start: 'top top', end: 'bottom bottom', scrub: SCRUB, invalidateOnRefresh: true } })
       // El cuarto aparece desde la niebla mientras la sección entra y se vuelve a disolver mientras sale.
@@ -303,13 +199,13 @@ export function HomeJourney() {
     // que se recalculan solas si cambia la pantalla o la duración.
     const at = (el: HTMLElement, f: number) => top(el) + run(el) * endOf(el) * f // fracción f de la animación de la sección
     // Cada parada sabe a qué sección pertenece: un salto entre paradas de la misma sección es "interno" (lento) y uno que
-    // cambia de sección es "de paso" (rápido). 0 hero · 1 desfile · 2 Gemi · 3 cuarto · 4 puerta · 5 texto final.
+    // cambia de sección es "de paso" (rápido). 0 hero · 1 desfile · 2 impresora · 3 cuarto · 4 puerta · 5 texto final.
     type Stop = { y: number; section: number }
     const stops = (): Stop[] => [
       { y: 0, section: 0 }, // hero: puerta cerrada
       { y: at(parade, PARADE_STOP), section: 1 }, // desfile: la estrella entrando, con el texto visible
-      ...[0, 1, 2].map(i => ({ y: at(gemiSection, (i + 0.5) / 3), section: 2 })), // Gemi con cada color
-      { y: top(room), section: 3 }, // principio del cuarto (todavía gris): desde Gemi no se saltea la secuencia
+      ...PJ.STOPS.map(f => ({ y: at(printer, f), section: 2 })), // impresora: la bobina con el menú de colores · completa · pieza terminada (sin parada a mitad de impresión)
+      { y: top(room), section: 3 }, // principio del cuarto (todavía gris): desde la impresora no se saltea la secuencia
       { y: at(room, ROOM_STOP), section: 3 }, // cuarto encendido con el texto
       { y: at(door, DOOR_STOP), section: 4 }, // puerta abierta con Gemi saludando
       { y: top(final), section: 5 }, // texto final (el footer queda libre)
@@ -375,7 +271,7 @@ export function HomeJourney() {
     const onTouchEnd = () => { touching = false; window.clearTimeout(idle); idle = window.setTimeout(settle, 200) }
     // El snap no corrige los desplazamientos que provoca un clic (círculos de color, links del menú o de anclas).
     const markProgrammatic = () => { programmatic = true; cancel(); window.clearTimeout(release); release = window.setTimeout(() => { programmatic = false }, 2200) }
-    const onClick = (e: MouseEvent) => { if ((e.target as Element | null)?.closest('a, .gemi-color')) markProgrammatic() }
+    const onClick = (e: MouseEvent) => { if ((e.target as Element | null)?.closest('a')) markProgrammatic() }
     window.addEventListener('scroll', onScroll, { passive: true })
     window.addEventListener('wheel', cancel, { capture: true, passive: true })
     window.addEventListener('keydown', cancel, { capture: true })
@@ -384,57 +280,29 @@ export function HomeJourney() {
     document.addEventListener('click', onClick, true)
     programmaticRef.current = (done: boolean) => { if (done) { window.clearTimeout(release); programmatic = false } else markProgrammatic() }
 
-    paintParade(0); paintGemi(0); paintRincon(0); paintDoor(0)
+    paintParade(0); paintPrinter(0); paintRincon(0); paintDoor(0)
     return () => {
       ctx.revert(); lazyRoom.kill(); window.clearTimeout(idle); window.clearTimeout(release); programmaticRef.current = null
       window.removeEventListener('scroll', onScroll); window.removeEventListener('wheel', cancel, { capture: true }); window.removeEventListener('keydown', cancel, { capture: true })
       window.removeEventListener('touchstart', onTouchStart, { capture: true }); window.removeEventListener('touchend', onTouchEnd); document.removeEventListener('click', onClick, true)
-      const g = gemiNode(); if (g) { resetGemi(g); g.style.rotate = ''; g.style.visibility = '' }
+      const g = gemiNode(); if (g) { g.style.translate = ''; g.style.scale = ''; g.style.opacity = ''; g.style.pointerEvents = ''; g.style.rotate = ''; g.style.visibility = '' }
     }
   }, [mode])
-
-  // Tocar un color lleva el scroll (suave, el de la web) al medio de su tramo, que coincide con una parada del snap;
-  // igual el clic se marca como desplazamiento programado y el snap no interviene.
-  const goToColor = (i: number) => {
-    const section = gemiRef.current
-    if (!section || !mode) return
-    if (mode.reduced) {
-      setActive(i); colorRef.current.set(colors[i].hex); invalidate()
-      window.dispatchEvent(new CustomEvent('gemma-product-color', { detail: { hex: colors[i].hex } }))
-      return
-    }
-    // Misma cuenta que las paradas del snap: la animación ocupa el tramo fijo menos la media pantalla de salida.
-    const run = section.offsetHeight - window.innerHeight, end = Math.max(0.5, 1 - (0.5 * window.innerHeight) / run)
-    const target = section.getBoundingClientRect().top + window.scrollY + run * end * ((i + 0.5) / 3)
-    const lenis = getLenis()
-    if (!lenis) { window.scrollTo({ top: target, behavior: 'smooth' }); return }
-    programmaticRef.current?.(false)
-    // Salto dentro de la sección: mismo ritmo lento que el snap interno (1,2 a 2 s, sine.inOut; 20 % menos en celular).
-    const seconds = Math.min(2, Math.max(1.2, 0.9 + 0.55 * (Math.abs(target - window.scrollY) / window.innerHeight)))
-    lenis.scrollTo(target, { duration: mode.narrow ? seconds * 0.8 : seconds, easing: easeInOutSine, onComplete: () => programmaticRef.current?.(true) })
-  }
 
   return <div className="recorrido">
     <section ref={paradeRef} className="journey journey--parade" aria-label="Objetos de Gemma">
       <div className="journey-sticky">
-        {mode && <div ref={canvasRef} className="journey-canvas" style={{ visibility: 'hidden' }}><JourneyScene progress={progress} narrow={mode.narrow} reduced={mode.reduced} /></div>}
+        {mode && paradeReady && <div ref={canvasRef} className="journey-canvas" style={{ visibility: 'hidden' }}><JourneyScene progress={progress} narrow={mode.narrow} reduced={mode.reduced} /></div>}
         <Squiggles specs={PARADE_SPECS} size={size} paths={paradePaths} />
         <p ref={textRef} className="journey-text">Cada pieza nace de una idea, <em>una capa a la vez.</em></p>
       </div>
     </section>
-    <section ref={gemiRef} className="journey journey--gemi" aria-label="Gemi">
-      <div className="journey-sticky">
-        <Squiggles specs={GEMI_SPECS} size={size} paths={gemiPaths} />
-        <p ref={gemiTextRef} className="journey-text journey-text--gemi">Este es Gemi. <em>Le gusta cambiar de color</em> tanto como a vos.</p>
-        <div ref={gemi3dRef} className="gemi3d" style={{ opacity: 0 }}>{mode && <GemiScene color={colorRef} live={live} narrow={mode.narrow} reduced={mode.reduced} />}</div>
-        <div ref={menuRef} className="gemi-colors" role="group" aria-label="Color de Gemi" style={{ opacity: 0 }}>
-          {colors.map((c, i) => <button type="button" key={c.name} className={`gemi-color ${active === i ? 'gemi-color--active' : ''}`} onClick={() => goToColor(i)} aria-label={c.name} aria-pressed={active === i} style={{ '--dot': c.hex } as React.CSSProperties}><span className="gemi-color-dot" /></button>)}
-        </div>
-      </div>
+    <section ref={printerRef} className="journey journey--printer" aria-label="Cómo nace una pieza de Gemma">
+      {mode && <PrinterStage ref={printerApi} section={printerRef} mode={mode} size={size} dogColor={dogColor} />}
     </section>
     <section ref={rinconRef} className="journey journey--rincon" aria-label="El rincón se enciende">
       <div className="journey-sticky">
-        {mode && roomReady && <div className="journey-canvas room-canvas"><RoomScene progress={roomProgress} narrow={mode.narrow} reduced={mode.reduced} /></div>}
+        {mode && roomReady && <div className="journey-canvas room-canvas"><RoomScene progress={roomProgress} narrow={mode.narrow} reduced={mode.reduced} dogColor={dogColor} /></div>}
         <Squiggles specs={RINCON_SPECS} size={size} paths={rinconPaths} />
         <p ref={rinconTextRef} className="journey-text journey-text--rincon">Ahora sí <em>quedó lindo.</em></p>
       </div>
@@ -443,7 +311,7 @@ export function HomeJourney() {
       <div className="journey-sticky">
         {/* La misma puerta corrediza 3D del hero, abierta y con la luz cálida detrás. La caja .exit-door marca dónde va
             (la escena la mide para ubicarla) y es el destino de Gemi fijo. */}
-        {mode && roomReady && <div className="exit-door3d" aria-hidden="true"><DoorScene progress={exitDoor} anchor={doorFrameRef} narrow={mode.narrow} /></div>}
+        {mode && doorReady && <div className="exit-door3d" aria-hidden="true"><DoorScene progress={exitDoor} anchor={doorFrameRef} narrow={mode.narrow} /></div>}
         <div className="exit-scene"><div ref={doorFrameRef} className="exit-door" /></div>
         <div ref={washRef} className="exit-wash" aria-hidden="true" />
       </div>

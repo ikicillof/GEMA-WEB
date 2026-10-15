@@ -12,11 +12,12 @@ import { GemiGlobal } from '@/components/gemi-global'
 import { SmoothScroll } from '@/components/smooth-scroll'
 import { AuthProvider } from '@/components/auth-provider'
 import { LoginModal } from '@/components/login-modal'
+import { CursorTrail } from '@/components/cursor-trail'
 
 const poppins = Poppins({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-poppins', display: 'swap' })
 
 export const metadata: Metadata = { title: 'Gemma — Hacemos que cada rincón brille', description: 'Objetos de diseño impresos en 3D para hacer que cada rincón se sienta más hogar.' }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return <html lang="es"><body className={poppins.variable}><AuthProvider><CartProvider><SmoothScroll /><InitialLoader /><PageTransition /><SiteHeader /><main>{children}</main><SiteFooter /><CartDrawer /><GemiGlobal /><GemmaMotion /><LoginModal /></CartProvider></AuthProvider></body></html>
+  return <html lang="es"><body className={poppins.variable}><AuthProvider><CartProvider><SmoothScroll /><InitialLoader /><PageTransition /><SiteHeader /><main>{children}</main><SiteFooter /><CartDrawer /><GemiGlobal /><GemmaMotion /><CursorTrail /><LoginModal /></CartProvider></AuthProvider></body></html>
 }

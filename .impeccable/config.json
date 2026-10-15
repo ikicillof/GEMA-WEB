@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(.2, 1.5, .4, 1)",
+        "createdAt": "2026-10-13T19:58:28.334Z",
+        "reason": "Estilo gomita del brand book: el usuario pidió explícitamente rebotes gomita en las animaciones del carrito"
+      }
+    ]
+  }
+}
