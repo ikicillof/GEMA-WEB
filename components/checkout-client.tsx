@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import gsap from 'gsap'
 import { Building2, Check, Home, MessageCircle, Truck } from 'lucide-react'
 import {
   CP_REGEX, DATOS_ENVIO_VACIOS, PROVINCIAS, mensajeWhatsApp, plazoTexto,
@@ -11,8 +12,18 @@ import {
 import { formatPrice } from '@/lib/products'
 import { useAuth } from './auth-provider'
 import { useCart } from './cart-context'
+import { easeInOutSine, getLenis } from './smooth-scroll'
 
 type Errores = Partial<Record<keyof DatosEnvio, string>>
+
+// Cómo se nombra cada campo en el mensaje de "falta completar".
+const ETIQUETAS: Record<keyof DatosEnvio, string> = { nombre: 'nombre y apellido', dni: 'DNI', telefono: 'teléfono', email: 'email', calle: 'calle', numero: 'número', piso: 'piso', localidad: 'localidad', provincia: 'provincia', cp: 'código postal' }
+
+// Gemi fijo se ríe un momento (usa el evento que ya escucha GemiGlobal).
+function gemiSeRie() {
+  window.dispatchEvent(new CustomEvent('gemma-gemi-mood', { detail: { mood: 'laughing' } }))
+  window.setTimeout(() => window.dispatchEvent(new CustomEvent('gemma-gemi-mood', { detail: { mood: null } })), 1300)
+}
 
 function validar(d: DatosEnvio): Errores {
   const e: Errores = {}
@@ -51,6 +62,39 @@ export function CheckoutClient() {
   const errores = validar(datos)
   const formValido = Object.keys(errores).length === 0
   const cpListo = CP_REGEX.test(datos.cp) && !!datos.provincia
+  const envioElegido = !!resumen?.envio && (modalidad !== 'sucursal' || !!sucursal)
+  const completo = formValido && envioElegido
+
+  // --- Botón "Guardar y continuar": con datos incompletos se escapa del mouse (solo con cursor y sin reduced-motion) ---
+  const botonRef = useRef<HTMLButtonElement>(null)
+  const zonaRef = useRef<HTMLDivElement>(null)
+  const escapes = useRef(0) // cuántas veces se escapó; a la tercera avisa qué falta, pero sigue escapándose hasta que esté todo completo
+  const saltando = useRef(false)
+  const entorno = useRef({ cursor: false, reducido: false })
+
+  useEffect(() => {
+    entorno.current = {
+      cursor: window.matchMedia('(hover: hover) and (pointer: fine)').matches,
+      reducido: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    }
+    const acomodar = () => { if (botonRef.current) gsap.set(botonRef.current, { x: 0, y: 0, rotation: 0 }) }
+    window.addEventListener('resize', acomodar)
+    return () => { window.removeEventListener('resize', acomodar); if (botonRef.current) gsap.killTweensOf(botonRef.current) }
+  }, [])
+
+  // Con todo completo el botón se queda quieto y funciona normal.
+  useEffect(() => {
+    if (!completo) return
+    escapes.current = 0; saltando.current = false
+    if (botonRef.current) { gsap.killTweensOf(botonRef.current); gsap.to(botonRef.current, { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, duration: 0.3 }) }
+  }, [completo])
+
+  // Los datos válidos se guardan solos en la cuenta (sin mensajes), así no se pierden aunque el envío tenga que coordinarse por WhatsApp.
+  useEffect(() => {
+    if (!uid || !formValido) return
+    const t = setTimeout(() => { llamar('/api/cuenta/envio', { method: 'PUT', body: JSON.stringify(datos) }).catch(() => {}) }, 1500)
+    return () => clearTimeout(t)
+  }, [uid, formValido, datos, llamar])
 
   // Sin sesión: se abre el login (y al ingresar se vuelve acá con el carrito intacto).
   useEffect(() => {
@@ -121,15 +165,79 @@ export function CheckoutClient() {
     setMensaje(null)
   }
 
-  const guardar = async () => {
+  const faltantes = () => {
+    const campos = Object.keys(errores) as (keyof DatosEnvio)[]
+    const lista = campos.map(c => ETIQUETAS[c])
+    if (!envioElegido) lista.push(modalidad === 'sucursal' && !sucursal ? 'la sucursal de retiro' : 'la modalidad de envío')
+    return { campos, lista }
+  }
+
+  // Marca en rojo lo que falta, lo dice con palabras y lleva (scroll suave + foco) al primer campo.
+  const marcarFaltantes = () => {
+    const { campos, lista } = faltantes()
     setIntento(true)
-    if (!formValido) { setMensaje({ ok: false, texto: 'Revisá los campos marcados.' }); return }
+    setMensaje({ ok: false, texto: `Falta completar: ${lista.join(', ')}.` })
+    const destino = document.querySelector<HTMLElement>(campos.length ? `[data-campo="${campos[0]}"]` : '#checkout-envio')
+    if (!destino) return
+    const lenis = getLenis()
+    if (lenis && !entorno.current.reducido) lenis.scrollTo(destino, { offset: -150, duration: 1.1, easing: easeInOutSine })
+    else destino.scrollIntoView({ behavior: entorno.current.reducido ? 'auto' : 'smooth', block: 'center' })
+    destino.querySelector<HTMLElement>('input, select')?.focus({ preventScroll: true })
+  }
+
+  const sacudir = () => {
+    const b = botonRef.current
+    if (!b || entorno.current.reducido) return
+    gsap.to(b, { keyframes: [{ x: -10, rotation: -3, duration: 0.07 }, { x: 9, rotation: 3, duration: 0.07 }, { x: -7, rotation: -2, duration: 0.07 }, { x: 5, rotation: 1.5, duration: 0.07 }, { x: 0, rotation: 0, duration: 0.1 }], overwrite: 'auto' })
+  }
+
+  // Salta con rebote de gomita a otro punto de su zona, lejos del cursor.
+  const huir = (cursorX: number, cursorY: number) => {
+    const b = botonRef.current, z = zonaRef.current
+    if (!b || !z) return
+    saltando.current = true
+    const zr = z.getBoundingClientRect(), br = b.getBoundingClientRect()
+    const x0 = Number(gsap.getProperty(b, 'x')), y0 = Number(gsap.getProperty(b, 'y'))
+    const dxMax = Math.max(0, (zr.width - b.offsetWidth) / 2 - 24), dyMax = Math.max(0, (zr.height - b.offsetHeight) / 2 - 24)
+    const cx = br.left + br.width / 2 - x0, cy = br.top + br.height / 2 - y0 // centro del botón en su lugar
+    const lejos = (p: { x: number; y: number }) => Math.hypot(cx + p.x - cursorX, cy + p.y - cursorY)
+    const candidatos = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1]]
+      .map(([a, c]) => ({ x: a * dxMax, y: c * dyMax }))
+      .filter(p => Math.hypot(p.x - x0, p.y - y0) > 24)
+      .sort((a, c) => lejos(c) - lejos(a))
+    const elegido = candidatos[Math.floor(Math.random() * Math.min(3, candidatos.length))] ?? { x: 0, y: 0 }
+    gsap.timeline({ onComplete: () => { saltando.current = false } })
+      .to(b, { scaleX: 1.22, scaleY: 0.8, duration: 0.09, ease: 'power2.out' })
+      .to(b, { x: elegido.x, y: elegido.y, rotation: gsap.utils.random(-4, 4), duration: 0.8, ease: 'elastic.out(1, 0.45)' }, '>-0.02')
+      .to(b, { scaleX: 1, scaleY: 1, duration: 0.7, ease: 'elastic.out(1.1, 0.35)' }, '<')
+  }
+
+  // A la tercera vez vuelve a su lugar, se sacude y marca lo que falta (con scroll al primer campo). Después sigue escapándose.
+  const rendirse = () => {
+    const b = botonRef.current
+    if (!b) { marcarFaltantes(); return }
+    saltando.current = true
+    gsap.timeline({ onComplete: () => { saltando.current = false } })
+      .to(b, { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, duration: 0.55, ease: 'elastic.out(1, 0.5)' })
+      .add(marcarFaltantes, '<0.15')
+      .to(b, { keyframes: [{ x: -10, rotation: -3, duration: 0.07 }, { x: 9, rotation: 3, duration: 0.07 }, { x: -7, rotation: -2, duration: 0.07 }, { x: 5, rotation: 1.5, duration: 0.07 }, { x: 0, rotation: 0, duration: 0.1 }] }, '>-0.1')
+  }
+
+  const alAcercarse = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const { cursor, reducido } = entorno.current
+    if (completo || !cursor || reducido || e.pointerType !== 'mouse' || saltando.current) return
+    escapes.current += 1
+    gemiSeRie()
+    if (escapes.current === 3) rendirse()
+    else huir(e.clientX, e.clientY)
+  }
+
+  const guardar = async () => {
     setGuardando(true)
     try {
       const res = await llamar('/api/cuenta/envio', { method: 'PUT', body: JSON.stringify(datos) })
-      const faltaEnvio = !resumen?.envio || (modalidad === 'sucursal' && !sucursal)
       setMensaje(res.ok
-        ? { ok: !faltaEnvio, texto: faltaEnvio ? 'Guardamos tus datos. Falta elegir cómo recibir el pedido.' : 'Listo, guardamos tus datos. El pago (Mercado Pago o transferencia) se habilita en el próximo paso.' }
+        ? { ok: true, texto: 'Listo, guardamos tus datos. El pago (Mercado Pago o transferencia) se habilita en el próximo paso.' }
         : { ok: false, texto: 'No pudimos guardar tus datos. Probá de nuevo.' })
     } catch {
       setMensaje({ ok: false, texto: 'No pudimos guardar tus datos. Revisá tu conexión.' })
@@ -137,8 +245,15 @@ export function CheckoutClient() {
     setGuardando(false)
   }
 
+  // Click, toque, Enter o espacio. Incompleto: celular/táctil se sacude; teclado (detail 0) no se mueve y solo lleva el foco.
+  const alTocar = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (completo) { void guardar(); return }
+    if (e.detail > 0) sacudir()
+    marcarFaltantes()
+  }
+
   const campo = (nombre: keyof DatosEnvio, etiqueta: string, extra: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
-    <label className={`checkout-field ${intento && errores[nombre] ? 'checkout-field--error' : ''}`}>
+    <label data-campo={nombre} className={`checkout-field ${intento && errores[nombre] ? 'checkout-field--error' : ''}`}>
       <span>{etiqueta}</span>
       <input value={datos[nombre]} onChange={cambiar(nombre)} maxLength={nombre === 'email' ? 254 : 80} aria-invalid={intento && !!errores[nombre]} {...extra} />
       {intento && errores[nombre] && <small role="alert">{errores[nombre]}</small>}
@@ -155,7 +270,7 @@ export function CheckoutClient() {
 
   if (!items.length) return <section className="page-hero"><div className="shell">
     <p className="eyebrow">Finalizar compra</p><h1 className="page-title">Tu carrito está vacío</h1>
-    <Link href="/tienda" className="button button--dark">Ir a la tienda</Link>
+    <Link href="/tienda" className="button button--pink">Ir a la tienda</Link>
   </div></section>
 
   const lineas = resumen?.lineas ?? items.map(i => ({ ...i }))
@@ -184,7 +299,7 @@ export function CheckoutClient() {
               {campo('numero', 'Número', { autoComplete: 'off', maxLength: 10 })}
               {campo('piso', 'Piso / depto (opcional)', { autoComplete: 'address-line2', maxLength: 20 })}
               {campo('localidad', 'Localidad', { autoComplete: 'address-level2' })}
-              <label className={`checkout-field ${intento && errores.provincia ? 'checkout-field--error' : ''}`}>
+              <label data-campo="provincia" className={`checkout-field ${intento && errores.provincia ? 'checkout-field--error' : ''}`}>
                 <span>Provincia</span>
                 <select value={datos.provincia} onChange={cambiar('provincia')} aria-invalid={intento && !!errores.provincia}>
                   <option value="">Elegí una provincia</option>
@@ -196,7 +311,7 @@ export function CheckoutClient() {
             </div>
           </div>
 
-          <div className="checkout-card">
+          <div id="checkout-envio" className={`checkout-card ${intento && !envioElegido ? 'checkout-card--error' : ''}`}>
             <h2>Envío con Correo Argentino</h2>
             {!cpListo && <p className="checkout-hint">Completá la provincia y el código postal para ver las opciones de envío.</p>}
             {cotizando && <p className="checkout-hint" role="status">Cotizando tu envío…</p>}
@@ -251,8 +366,13 @@ export function CheckoutClient() {
               <small>Tarjetas y otros medios</small>
             </div>
           </div>}
-          <button type="button" className="button button--pink checkout-save" onClick={guardar} disabled={guardando}>{guardando ? 'Guardando…' : <>Guardar y continuar <Check size={16} /></>}</button>
-          {mensaje && <p className={mensaje.ok ? 'auth-ok' : 'auth-error'} role="status">{mensaje.texto}</p>}
+          <div className="escape-zone" ref={zonaRef}>
+            <button ref={botonRef} type="button" className="button button--pink checkout-save" onPointerEnter={alAcercarse} onClick={alTocar} disabled={guardando}
+              aria-label={completo ? undefined : 'Completá los datos obligatorios para continuar'}>
+              {guardando ? 'Guardando…' : <>Guardar y continuar <Check size={16} /></>}
+            </button>
+          </div>
+          {mensaje && <p className={mensaje.ok ? 'auth-ok' : 'auth-error'} role={mensaje.ok ? 'status' : 'alert'}>{mensaje.texto}</p>}
           <p className="drawer-note">Los montos se calculan en nuestro servidor con los precios vigentes.</p>
         </aside>
       </div>
