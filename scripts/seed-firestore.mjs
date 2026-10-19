@@ -33,4 +33,14 @@ if ((await cfg.get()).get('descuentoTransferenciaPct') === undefined) {
   await cfg.set({ descuentoTransferenciaPct: 10 }, { merge: true })
   console.log('agregado  configuracion/general.descuentoTransferenciaPct = 10 (provisorio, lo define la dueña)')
 }
+// Datos de EJEMPLO para la transferencia, el WhatsApp y los avisos. Provisorios: hay que reemplazarlos por los reales (ver docs/estado-backend.md).
+const actual = await cfg.get()
+const provisorios = {}
+if (actual.get('datosTransferencia') === undefined) provisorios.datosTransferencia = { alias: 'gemma.tienda.ejemplo', titular: 'Titular de ejemplo', banco: 'Banco de ejemplo', provisorio: true }
+if (actual.get('whatsapp') === undefined) provisorios.whatsapp = '5491128397462'
+if (actual.get('emailAvisos') === undefined) provisorios.emailAvisos = 'ikicillof@gmail.com'
+if (Object.keys(provisorios).length) {
+  await cfg.set({ ...provisorios, datosProvisorios: true }, { merge: true })
+  console.log('agregado  configuracion/general:', Object.keys(provisorios).join(', '), '(PROVISORIOS, reemplazar por los reales)')
+}
 process.exit(0)

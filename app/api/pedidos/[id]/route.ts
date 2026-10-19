@@ -24,7 +24,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     }
     const pedido = aPublico(snap.id, snap.data()!)
     if (pedido.estado === 'transferencia_en_proceso') {
-      try { pedido.instruccionesTransferencia = (await getConfiguracion()).datosTransferencia } catch { /* sin datos cargados: se coordina por WhatsApp */ }
+      try {
+        const cfg = await getConfiguracion()
+        pedido.transferencia = { datos: cfg.datosTransferencia, whatsapp: cfg.whatsapp }
+      } catch { /* sin datos cargados: se coordina por WhatsApp */ }
     }
     return json({ pedido })
   } catch (e) {

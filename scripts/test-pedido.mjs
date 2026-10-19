@@ -101,7 +101,8 @@ try {
 
   console.log('--- Lectura (solo el dueño, sin datos internos)')
   r = await llamar('GET', '/api/pedidos/' + idTr, t1)
-  check('el dueño ve su compra con las instrucciones de transferencia', r.status === 200 && r.body.pedido.estado === 'transferencia_en_proceso' && typeof r.body.pedido.instruccionesTransferencia === 'string', JSON.stringify(r.body).slice(0, 200))
+  check('el dueño ve su compra con alias, titular, banco y WhatsApp para transferir', r.status === 200 && r.body.pedido.estado === 'transferencia_en_proceso' && r.body.pedido.total === docTr.total && r.body.pedido.descuento === 2000 && !!r.body.pedido.transferencia?.datos?.alias && !!r.body.pedido.transferencia?.datos?.titular && !!r.body.pedido.transferencia?.datos?.banco && /^[0-9]{10,15}$/.test(r.body.pedido.transferencia?.whatsapp ?? ''), JSON.stringify(r.body.pedido?.transferencia))
+  check('Mis compras la muestra como "Esperando la transferencia" (estado transferencia_en_proceso)', (await llamar('GET', '/api/pedidos', t1)).body.pedidos.find(p => p.id === idTr)?.estado === 'transferencia_en_proceso')
   check('otra persona no puede ver la compra (404)', (await llamar('GET', '/api/pedidos/' + idTr, t2)).status === 404)
   check('id mal formado -> 404', (await llamar('GET', '/api/pedidos/..%2F..%2Fusers', t1)).status === 404)
   r = await llamar('GET', '/api/pedidos', t1)

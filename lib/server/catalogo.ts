@@ -84,10 +84,14 @@ export const getConfiguracion = unstable_cache(
   async () => {
     const d = (await adminDb().doc('configuracion/general').get()).data() ?? {}
     const pct = typeof d.descuentoTransferenciaPct === 'number' && d.descuentoTransferenciaPct >= 0 && d.descuentoTransferenciaPct <= 50 ? d.descuentoTransferenciaPct : 10
-    // Datos bancarios para pagar por transferencia (texto libre que carga la dueña en configuracion/general).
-    const datosTransferencia = typeof d.datosTransferencia === 'string' ? d.datosTransferencia.replace(/[\u0000-\u001f\u007f<>]/g, ' ').trim().slice(0, 600) : ''
-    return { descuentoTransferenciaPct: pct, datosTransferencia }
+    // Datos para pagar por transferencia (configuracion/general.datosTransferencia: alias, titular, banco) y WhatsApp de la tienda.
+    const limpio = (v: unknown, max: number) => typeof v === 'string' ? v.replace(/[\u0000-\u001f\u007f<>]/g, ' ').trim().slice(0, max) : ''
+    const t = d.datosTransferencia && typeof d.datosTransferencia === 'object' ? d.datosTransferencia : {}
+    const alias = limpio(t.alias, 60)
+    const datosTransferencia = alias ? { alias, titular: limpio(t.titular, 80), banco: limpio(t.banco, 80), provisorio: t.provisorio === true } : null
+    const whatsapp = limpio(d.whatsapp, 20).replace(/\D/g, '')
+    return { descuentoTransferenciaPct: pct, datosTransferencia, whatsapp: whatsapp || null }
   },
-  ['configuracion-v1'],
+  ['configuracion-v2'],
   { revalidate: 60, tags: ['configuracion'] },
 )

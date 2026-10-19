@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import type { PedidoPublico } from '@/lib/pedidos'
 import { WHATSAPP_NUMERO } from '@/lib/envio'
+import { Check, Copy } from 'lucide-react'
 import { formatPrice } from '@/lib/products'
 import { useAuth } from './auth-provider'
 import { useCart } from './cart-context'
@@ -72,16 +73,36 @@ export function ResultadoClient() {
             : 'Mercado Pago todavía no nos confirmó el pago. Esta página se actualiza sola; si ya pagaste, puede demorar unos minutos.'}</p>
           <Link href="/checkout" className="button button--pink">Volver al checkout</Link>
         </div>}
-        {pedido.estado === 'transferencia_en_proceso' && <div className="checkout-card">
-          <h2>Cómo pagar</h2>
-          <p className="checkout-hint" style={{ whiteSpace: 'pre-line' }}>{pedido.instruccionesTransferencia
-            || 'Te pasamos los datos para transferir por WhatsApp. Escribinos y coordinamos.'}</p>
-          <p className="checkout-hint">Transferí {formatPrice(pedido.total)} e indicá el número de compra {pedido.id}.</p>
-          <a className="button button--dark" href={`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(`Hola Gemma, hice la compra ${pedido.id} y voy a pagar por transferencia.`)}`} target="_blank" rel="noopener noreferrer">Avisar por WhatsApp</a>
-        </div>}
+        {pedido.estado === 'transferencia_en_proceso' && <Transferencia pedido={pedido} />}
         <PedidoDetalle pedido={pedido} />
         <Link href="/mis-compras" className="button button--dark">Ver mis compras</Link>
       </div>}
     </div>
   </section>
+}
+
+/** Cuánto transferir, a dónde (alias con botón para copiar) y el comprobante por WhatsApp con el mensaje ya armado. */
+function Transferencia({ pedido }: { pedido: PedidoPublico }) {
+  const [copiado, setCopiado] = useState(false)
+  const datos = pedido.transferencia?.datos ?? null
+  const numero = pedido.transferencia?.whatsapp || WHATSAPP_NUMERO
+  const productos = pedido.lineas.map(l => `${l.name} (${l.color}) x${l.quantity}`).join(', ')
+  const mensaje = `Hola Gemma, soy ${pedido.entrega.nombre}. Te envío el comprobante de la transferencia del pedido ${pedido.id}.
+Productos: ${productos}
+Total: ${formatPrice(pedido.total)}`
+  const copiar = async () => {
+    if (!datos) return
+    try { await navigator.clipboard.writeText(datos.alias); setCopiado(true); setTimeout(() => setCopiado(false), 2500) } catch { /* el alias queda a la vista para copiarlo a mano */ }
+  }
+  return <div className="checkout-card">
+    <h2>Cómo pagar</h2>
+    <p className="checkout-hint">Transferí <b>{formatPrice(pedido.total)}</b>{pedido.descuento > 0 ? ` (ya con el descuento por transferencia de ${formatPrice(pedido.descuento)})` : ''} e indicá el número de compra {pedido.id}.</p>
+    {datos ? <dl className="summary-totals">
+      <div><dt>Alias</dt><dd><b>{datos.alias}</b> <button type="button" className="button button--dark" onClick={copiar} aria-live="polite">{copiado ? <><Check size={16} /> Copiado</> : <><Copy size={16} /> Copiar alias</>}</button></dd></div>
+      {datos.titular && <div><dt>Titular</dt><dd>{datos.titular}</dd></div>}
+      {datos.banco && <div><dt>Banco</dt><dd>{datos.banco}</dd></div>}
+    </dl> : <p className="checkout-hint">Te pasamos los datos para transferir por WhatsApp. Escribinos y coordinamos.</p>}
+    {datos?.provisorio && <p className="checkout-sim">Datos de ejemplo: todavía no transfieras a este alias.</p>}
+    <a className="button button--dark" href={`https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`} target="_blank" rel="noopener noreferrer">Enviar comprobante por WhatsApp</a>
+  </div>
 }

@@ -8,10 +8,12 @@ export type MetodoPago = 'mercadopago' | 'transferencia'
 export const ESTADO_TEXTO: Record<EstadoPedido, string> = {
   pendiente_pago: 'Pendiente de pago',
   pagado: 'Pagado',
-  transferencia_en_proceso: 'Esperando tu transferencia',
+  transferencia_en_proceso: 'Esperando la transferencia',
   completado: 'Completado',
   cancelado: 'Cancelado',
 }
+
+export type DatosTransferencia = { alias: string; titular: string; banco: string; provisorio: boolean }
 
 /** Lo que se le muestra a la persona dueña del pedido (nunca el documento crudo de Firestore). */
 export type PedidoPublico = {
@@ -26,7 +28,8 @@ export type PedidoPublico = {
   total: number
   entrega: Pick<DatosEnvio, 'nombre' | 'calle' | 'numero' | 'piso' | 'localidad' | 'provincia' | 'cp'>
   modoPrueba: boolean
-  instruccionesTransferencia?: string // solo mientras se espera la transferencia
+  // Solo mientras se espera la transferencia: a dónde transferir y el WhatsApp para mandar el comprobante.
+  transferencia?: { datos: DatosTransferencia | null; whatsapp: string | null }
 }
 
 /**
