@@ -66,23 +66,18 @@ export function CheckoutClient() {
   const completo = formValido && envioElegido
   const hayCotizacion = !!opciones && !cotizando && !errorEnvio
 
-  // --- Botones de pago: con datos incompletos escapan del mouse (3 veces), rebotan al tocarlos y marcan lo que falta ---
+  // --- Botones de pago: con datos incompletos rebotan al tocarlos, marcan lo que falta y llevan al primer campo incompleto ---
   const botones = useRef<Record<MetodoPago, HTMLButtonElement | null>>({ mercadopago: null, transferencia: null })
-  const escapes = useRef<Record<MetodoPago, number>>({ mercadopago: 0, transferencia: 0 })
-  const entorno = useRef({ reducido: false, punteroFino: false })
+  const entorno = useRef({ reducido: false })
 
   useEffect(() => {
-    entorno.current = {
-      reducido: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-      punteroFino: window.matchMedia('(hover: hover) and (pointer: fine)').matches,
-    }
+    entorno.current = { reducido: window.matchMedia('(prefers-reduced-motion: reduce)').matches }
     const guardados = botones.current
     return () => { for (const b of Object.values(guardados)) if (b) gsap.killTweensOf(b) }
   }, [])
 
-  // Con todo completo los botones vuelven a su lugar y quedan quietos; si vuelven a quedar incompletos, vuelven a escapar.
+  // Con todo completo los botones vuelven a su estado normal.
   useEffect(() => {
-    escapes.current = { mercadopago: 0, transferencia: 0 }
     if (!completo) return
     for (const b of Object.values(botones.current)) if (b) { gsap.killTweensOf(b); gsap.to(b, { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, duration: 0.3 }) }
   }, [completo])
@@ -195,25 +190,6 @@ export function CheckoutClient() {
       .to(b, { keyframes: [{ x: '-=10', rotation: -3, duration: 0.07 }, { x: '+=19', rotation: 3, duration: 0.07 }, { x: '-=16', rotation: -2, duration: 0.07 }, { x: '+=12', rotation: 1.5, duration: 0.07 }, { x: '-=5', rotation: 0, duration: 0.1 }] }, '<0.05')
   }
 
-  // Escritorio: el botón se escapa del cursor; a la tercera vez se rinde, se queda quieto y marca lo que falta.
-  const escapar = (metodo: MetodoPago, e: React.PointerEvent<HTMLButtonElement>) => {
-    const b = botones.current[metodo]
-    if (!b || completo || !hayCotizacion || pagando || e.pointerType !== 'mouse') return
-    if (entorno.current.reducido || !entorno.current.punteroFino) return
-    gsap.killTweensOf(b)
-    if (++escapes.current[metodo] >= 3) {
-      gsap.to(b, { x: 0, y: 0, rotation: 0, duration: 0.35, ease: 'power2.out', onComplete: () => rebotar(metodo) })
-      marcarFaltantes()
-      return
-    }
-    const r = b.getBoundingClientRect()
-    let dx = (r.left + r.width / 2 >= e.clientX ? 1 : -1) * (70 + Math.random() * 50)
-    let dy = (r.top + r.height / 2 >= e.clientY ? 1 : -1) * (30 + Math.random() * 30)
-    if (r.left + dx < 8 || r.right + dx > window.innerWidth - 8) dx = -dx
-    if (r.top + dy < 110 || r.bottom + dy > window.innerHeight - 8) dy = -dy
-    gsap.to(b, { x: `+=${dx}`, y: `+=${dy}`, rotation: gsap.utils.random(-6, 6), duration: 0.35, ease: 'back.out(1.6)' })
-  }
-
   // Valida, guarda los datos en la cuenta y crea la venta en el servidor (que recalcula todos los montos), todo en un paso.
   const pagar = async (metodoPago: MetodoPago) => {
     if (enCurso.current || !completo || !modalidad) return
@@ -251,7 +227,7 @@ export function CheckoutClient() {
     }
   }
 
-  // Click, toque, Enter o espacio. Incompleto: mouse/táctil rebota; teclado (detail 0) no se mueve y solo lleva el foco al primer campo.
+  // Click, toque, Enter o espacio. Incompleto: con mouse o táctil rebota; con teclado (detail 0) no rebota. En todos los casos lleva al primer campo incompleto.
   const alTocar = (metodo: MetodoPago) => (e: React.MouseEvent<HTMLButtonElement>) => {
     if (pagando) return
     if (completo) { void pagar(metodo); return }
@@ -350,12 +326,12 @@ export function CheckoutClient() {
             <h2>Elegí cómo pagar</h2>
             {!hayCotizacion && !errorEnvio && <p className="checkout-hint" id="pago-aviso">Completá tu código postal para calcular el envío</p>}
             <div className="pay-actions">
-              <button ref={el => { botones.current.mercadopago = el }} type="button" className="button button--dark pay-btn" onClick={alTocar('mercadopago')} onPointerEnter={e => escapar('mercadopago', e)}
+              <button ref={el => { botones.current.mercadopago = el }} type="button" className="button button--dark pay-btn" onClick={alTocar('mercadopago')}
                 disabled={!hayCotizacion || !!pagando} aria-describedby={hayCotizacion ? undefined : 'pago-aviso'}>
                 <span>Pagar con Mercado Pago</span>
                 {resumen?.envio && <strong>{formatPrice(resumen.mercadoPago.total)}</strong>}
               </button>
-              <button ref={el => { botones.current.transferencia = el }} type="button" className="button button--pink pay-btn" onClick={alTocar('transferencia')} onPointerEnter={e => escapar('transferencia', e)}
+              <button ref={el => { botones.current.transferencia = el }} type="button" className="button button--pink pay-btn" onClick={alTocar('transferencia')}
                 disabled={!hayCotizacion || !!pagando} aria-describedby={hayCotizacion ? undefined : 'pago-aviso'}>
                 <span>Pagar por transferencia{resumen ? ` (${resumen.transferencia.descuentoPct}% OFF)` : ''}</span>
                 {resumen?.envio && <strong>{formatPrice(resumen.transferencia.total)}</strong>}
