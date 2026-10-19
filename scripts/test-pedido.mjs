@@ -98,6 +98,8 @@ try {
   const docTr = (await D.doc('orders/' + idTr).get()).data()
   check('queda transferencia_en_proceso, con 10 % de descuento solo en productos', r.status === 201 && docTr.estado === 'transferencia_en_proceso' && docTr.descuento === 2000 && docTr.total === 20000 - 2000 + docTr.envio.precio, JSON.stringify({ s: r.status, d: docTr?.descuento, t: docTr?.total }))
   check('transferencia no crea preferencia en Mercado Pago', mp.preferencias.length === 1)
+  const mails = (await D.doc('orders/' + idTr).get()).data().emails ?? {}
+  check('los mails de la venta quedan registrados (enviado o error para reintentar) y la venta se guardó igual', ['enviado', 'error'].includes(mails.nueva_venta_duena?.estado) && ['enviado', 'error'].includes(mails.confirmacion_cliente?.estado), JSON.stringify(mails))
 
   console.log('--- Lectura (solo el dueño, sin datos internos)')
   r = await llamar('GET', '/api/pedidos/' + idTr, t1)

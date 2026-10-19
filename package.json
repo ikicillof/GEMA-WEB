@@ -16,10 +16,13 @@
     "vincular:modelos": "tsx --env-file=.env.local scripts/vincular-modelos.ts",
     "test:checkout": "node --env-file=.env.local scripts/test-checkout.mjs",
     "test:pagos": "tsx --conditions=react-server --env-file=.env.local scripts/test-pagos.mts",
-    "limpiar:pruebas": "tsx --env-file=.env.local scripts/limpiar-pruebas.ts"
+    "limpiar:pruebas": "tsx --env-file=.env.local scripts/limpiar-pruebas.ts",
+    "mails:ejemplo": "tsx --tsconfig scripts/tsconfig.mails.json --env-file=.env.local scripts/mails-ejemplo.mts"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.1.1",
     "@react-three/fiber": "^8.17.10",
     "@types/node": "20.14.15",
     "@types/react": "18.3.3",
@@ -32,6 +35,7 @@
     "next": "^14.2.32",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "resend": "^6.34.1",
     "server-only": "^0.0.1",
     "three": "^0.169.0",
     "typescript": "5.5.4",

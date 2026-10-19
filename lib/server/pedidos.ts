@@ -2,6 +2,7 @@ import 'server-only'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { adminDb } from '@/lib/firebase/admin'
 import { ESTADOS, siguienteEstado, type EstadoPedido, type PedidoPublico } from '@/lib/pedidos'
+import { avisarTransferenciaCompletada, avisarVentaNueva } from '@/lib/server/emails'
 import { ErrorMercadoPago, pagosDeLaVenta, type PagoMP } from '@/lib/server/mercadopago'
 
 export const pedidos = () => adminDb().collection('orders')
@@ -17,7 +18,9 @@ export type ResultadoPago = 'actualizado' | 'sin_cambios' | 'no_existe' | 'ajeno
 export async function aplicarPago(pedidoId: string, pago: PagoMP): Promise<ResultadoPago> {
   if (pago.external_reference !== pedidoId) return 'ajeno'
   const ref = pedidos().doc(pedidoId)
-  return adminDb().runTransaction(async tx => {
+  let pasoAPagado = false
+  const resultado = await adminDb().runTransaction(async tx => {
+    pasoAPagado = false
     const snap = await tx.get(ref)
     if (!snap.exists) return 'no_existe' as const
     const d = snap.data()!
@@ -34,6 +37,7 @@ export async function aplicarPago(pedidoId: string, pago: PagoMP): Promise<Resul
     }
     if (estado !== actual) {
       cambios.estado = estado
+      pasoAPagado = estado === 'pagado'
       cambios.historial = FieldValue.arrayUnion({ estado, en: new Date().toISOString(), motivo: `Pago ${pago.id}: ${pago.status}` })
     }
     if (revision && d.requiereRevision !== true) cambios.requiereRevision = true
@@ -42,6 +46,26 @@ export async function aplicarPago(pedidoId: string, pago: PagoMP): Promise<Resul
     tx.update(ref, cambios)
     return 'actualizado' as const
   })
+  // Venta nueva cobrada: se avisa a la dueña y al cliente (una sola vez por venta; si Resend falla, queda anotado para reintentar).
+  if (resultado === 'actualizado' && pasoAPagado) await avisarVentaNueva(pedidoId)
+  return resultado
+}
+
+export type ResultadoCompletar = 'completada' | 'no_existe' | 'estado_invalido'
+
+/** La dueña confirma que llegó la transferencia: transferencia_en_proceso -> completado, y se le avisa al cliente. */
+export async function completarTransferencia(pedidoId: string, quien: string): Promise<ResultadoCompletar> {
+  const ref = pedidos().doc(pedidoId)
+  const resultado = await adminDb().runTransaction(async tx => {
+    const snap = await tx.get(ref)
+    if (!snap.exists) return 'no_existe' as const
+    if (snap.data()?.estado !== 'transferencia_en_proceso') return 'estado_invalido' as const
+    const estado: EstadoPedido = 'completado'
+    tx.update(ref, { estado, historial: FieldValue.arrayUnion({ estado, en: new Date().toISOString(), motivo: `Transferencia confirmada por ${quien}` }), actualizadoEn: FieldValue.serverTimestamp() })
+    return 'completada' as const
+  })
+  if (resultado === 'completada') await avisarTransferenciaCompletada(pedidoId)
+  return resultado
 }
 
 /**

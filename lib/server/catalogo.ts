@@ -90,8 +90,9 @@ export const getConfiguracion = unstable_cache(
     const alias = limpio(t.alias, 60)
     const datosTransferencia = alias ? { alias, titular: limpio(t.titular, 80), banco: limpio(t.banco, 80), provisorio: t.provisorio === true } : null
     const whatsapp = limpio(d.whatsapp, 20).replace(/\D/g, '')
-    return { descuentoTransferenciaPct: pct, datosTransferencia, whatsapp: whatsapp || null }
+    const emailAvisos = limpio(d.emailAvisos, 120)
+    return { descuentoTransferenciaPct: pct, datosTransferencia, whatsapp: whatsapp || null, emailAvisos: /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(emailAvisos) ? emailAvisos : null }
   },
-  ['configuracion-v2'],
+  ['configuracion-v3'],
   { revalidate: 60, tags: ['configuracion'] },
 )

@@ -1,6 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore'
 import type { EstadoPedido, MetodoPago } from '@/lib/pedidos'
 import { json } from '@/lib/server/auth'
+import { avisarVentaNueva } from '@/lib/server/emails'
 import { crearPreferencia, esModoPrueba, mercadoPagoConfigurado, urlDelSitio } from '@/lib/server/mercadopago'
 import { pedidos } from '@/lib/server/pedidos'
 import { exigirUsuario, leerCuerpo } from '@/lib/server/sesion'
@@ -63,7 +64,10 @@ export async function POST(req: Request) {
       actualizadoEn: FieldValue.serverTimestamp(),
     })
 
-    if (metodoPago === 'transferencia') return json({ pedidoId: ref.id, metodoPago, total }, 201)
+    if (metodoPago === 'transferencia') {
+      await avisarVentaNueva(ref.id) // nunca lanza: si Resend falla, la venta queda guardada y el error anotado
+      return json({ pedidoId: ref.id, metodoPago, total }, 201)
+    }
 
     try {
       const pref = await crearPreferencia({
