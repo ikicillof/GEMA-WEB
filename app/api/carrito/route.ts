@@ -3,6 +3,7 @@ import type { ItemPedido } from '@/lib/envio'
 import { adminDb } from '@/lib/firebase/admin'
 import { json } from '@/lib/server/auth'
 import { resolverItems } from '@/lib/server/carrito'
+import { esModoPrueba } from '@/lib/server/mercadopago'
 import { exigirUsuario, leerCuerpo } from '@/lib/server/sesion'
 import { CarritoSchema } from '@/lib/server/validacion'
 
@@ -49,7 +50,8 @@ export async function PUT(req: Request) {
       items = Array.from(unidos.values())
     }
     const { lineas } = await resolverItems(items)
-    await doc(sesion.uid).set({ items: aItems(lineas), actualizadoEn: FieldValue.serverTimestamp() })
+    // Los carritos creados con credenciales de prueba quedan marcados para borrarlos antes de publicar (npm run limpiar:pruebas).
+    await doc(sesion.uid).set({ items: aItems(lineas), actualizadoEn: FieldValue.serverTimestamp(), ...(esModoPrueba() ? { modoPrueba: true } : {}) })
     return json({ items: lineas })
   } catch (e) {
     console.error('[carrito] PUT', (e as Error).message)

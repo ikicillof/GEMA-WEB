@@ -42,4 +42,17 @@ export const ResumenSchema = z.object({
   }).strict().optional(),
 }).strict()
 
+// Crear la venta: productos + envío elegido + datos de entrega + forma de pago. Ningún monto viene del navegador.
+export const PedidoSchema = z.object({
+  items: ItemsSchema.min(1),
+  envio: z.object({
+    modalidad: z.enum(['domicilio', 'sucursal']),
+    cp,
+    provincia,
+    sucursal: z.string().regex(/^[A-Za-z0-9_-]{1,40}$/).optional(),
+  }).strict(),
+  datosEnvio: DatosEnvioSchema,
+  metodoPago: z.enum(['mercadopago', 'transferencia']),
+}).strict()
+
 export const CarritoSchema = z.object({ items: ItemsSchema, modo: z.enum(['reemplazar', 'fusionar']) }).strict()

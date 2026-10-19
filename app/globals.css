@@ -822,6 +822,19 @@ body.nf-active .gemi-global { visibility:hidden; }
 .auth-link:focus-visible, .auth-google:focus-visible, .ship-option:focus-within, .branch:focus-within, .user-dropdown a:focus-visible, .user-dropdown button:focus-visible { outline:3px solid var(--violet); outline-offset:2px; }
 .user-dropdown a:focus-visible, .user-dropdown button:focus-visible { background:var(--blush); }
 
+/* Pago: formas de pago tras guardar los datos, y el detalle de cada compra */
+.pay-actions { display:flex; flex-direction:column; gap:10px; margin-top:14px; }
+.pay-actions .button { width:100%; justify-content:center; }
+.pedido + .pedido { margin-top:6px; }
+.pedido-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+.pedido-head > div { display:flex; flex-direction:column; gap:2px; font-size:14px; }
+.pedido-head small { color:rgba(15,15,16,.7); font-size:11px; word-break:break-all; }
+.pedido-estado { padding:6px 12px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:.04em; background:var(--blush); color:var(--graphite); border:1.5px solid rgba(15,15,16,.25); }
+.pedido-estado--pagado, .pedido-estado--completado { background:color-mix(in srgb, var(--turquoise) 30%, white); }
+.pedido-estado--cancelado { background:#fde8e6; color:var(--error); border-color:var(--error); }
+.pedido-total { font-weight:700; }
+.pedido .checkout-hint { margin-top:14px; }
+
 /* Botón "Guardar y continuar": rebota en su lugar si faltan datos */
 .save-zone { display:flex; justify-content:center; }
 .checkout-save { will-change:transform; }

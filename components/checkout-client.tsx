@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { Building2, Check, Home, MessageCircle, Truck } from 'lucide-react'
@@ -9,6 +10,7 @@ import {
   CP_REGEX, DATOS_ENVIO_VACIOS, PROVINCIAS, mensajeWhatsApp, plazoTexto,
   type DatosEnvio, type ItemPedido, type Modalidad, type OpcionEnvio, type ResumenCheckout, type Sucursal,
 } from '@/lib/envio'
+import type { MetodoPago } from '@/lib/pedidos'
 import { formatPrice } from '@/lib/products'
 import { useAuth } from './auth-provider'
 import { useCart } from './cart-context'
@@ -35,7 +37,10 @@ function validar(d: DatosEnvio): Errores {
 
 export function CheckoutClient() {
   const { sesion, cargando, abrirLogin, llamar } = useAuth()
-  const { items } = useCart()
+  const { items, clearCart } = useCart()
+  const router = useRouter()
+  const [listoParaPagar, setListoParaPagar] = useState(false) // datos guardados: se muestran las formas de pago
+  const [pagando, setPagando] = useState<MetodoPago | null>(null)
   const [datos, setDatos] = useState<DatosEnvio>(DATOS_ENVIO_VACIOS)
   const [intento, setIntento] = useState(false)
   const [opciones, setOpciones] = useState<OpcionEnvio[] | null>(null)
@@ -187,12 +192,48 @@ export function CheckoutClient() {
     try {
       const res = await llamar('/api/cuenta/envio', { method: 'PUT', body: JSON.stringify(datos) })
       setMensaje(res.ok
-        ? { ok: true, texto: 'Listo, guardamos tus datos. El pago (Mercado Pago o transferencia) se habilita en el próximo paso.' }
+        ? { ok: true, texto: 'Listo, guardamos tus datos. Elegí cómo querés pagar.' }
         : { ok: false, texto: 'No pudimos guardar tus datos. Probá de nuevo.' })
+      if (res.ok) setListoParaPagar(true)
     } catch {
       setMensaje({ ok: false, texto: 'No pudimos guardar tus datos. Revisá tu conexión.' })
     }
     setGuardando(false)
+  }
+
+  // Si dejan de estar completos los datos o el envío, vuelve a pedirse "Guardar y continuar".
+  useEffect(() => { if (!completo) setListoParaPagar(false) }, [completo])
+
+  // Crea la venta en el servidor (que recalcula todos los montos) y lleva al pago.
+  const pagar = async (metodoPago: MetodoPago) => {
+    if (!completo || !modalidad || pagando) return
+    setPagando(metodoPago)
+    setMensaje(null)
+    try {
+      const res = await llamar('/api/checkout/pedido', {
+        method: 'POST',
+        body: JSON.stringify({
+          items: pedido,
+          envio: { modalidad, cp: datos.cp, provincia: datos.provincia, ...(modalidad === 'sucursal' && sucursal ? { sucursal } : {}) },
+          datosEnvio: { ...datos, nombre: datos.nombre.trim(), email: datos.email.trim() },
+          metodoPago,
+        }),
+      })
+      const cuerpo = await res.json().catch(() => ({}))
+      if (!res.ok) { setMensaje({ ok: false, texto: cuerpo.error || 'No pudimos crear tu pedido. Probá de nuevo.' }); setPagando(null); return }
+      if (metodoPago === 'transferencia') {
+        clearCart()
+        router.push(`/checkout/resultado?pedido=${encodeURIComponent(cuerpo.pedidoId)}&r=transferencia`)
+        return
+      }
+      // Solo se navega a un dominio de Mercado Pago.
+      const destino = new URL(String(cuerpo.url))
+      if (destino.protocol !== 'https:' || !/(^|\.)mercadopago\.com(\.ar)?$/.test(destino.hostname)) throw new Error('destino inesperado')
+      window.location.assign(destino.href)
+    } catch {
+      setMensaje({ ok: false, texto: 'No pudimos iniciar el pago. Revisá tu conexión y probá de nuevo.' })
+      setPagando(null)
+    }
   }
 
   // Click, toque, Enter o espacio. Incompleto: mouse/táctil rebota; teclado (detail 0) no se mueve y solo lleva el foco.
@@ -323,6 +364,14 @@ export function CheckoutClient() {
             </button>
           </div>
           {mensaje && <p className={mensaje.ok ? 'auth-ok' : 'auth-error'} role={mensaje.ok ? 'status' : 'alert'}>{mensaje.texto}</p>}
+          {listoParaPagar && resumen && <div className="pay-actions">
+            <button type="button" className="button button--dark" onClick={() => void pagar('mercadopago')} disabled={!!pagando}>
+              {pagando === 'mercadopago' ? 'Abriendo Mercado Pago…' : <>Pagar con Mercado Pago · {formatPrice(resumen.mercadoPago.total)}</>}
+            </button>
+            <button type="button" className="button button--pink" onClick={() => void pagar('transferencia')} disabled={!!pagando}>
+              {pagando === 'transferencia' ? 'Creando tu pedido…' : <>Pagar por transferencia · {formatPrice(resumen.transferencia.total)}</>}
+            </button>
+          </div>}
           <p className="drawer-note">Los montos se calculan en nuestro servidor con los precios vigentes.</p>
         </aside>
       </div>

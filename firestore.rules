@@ -36,7 +36,8 @@ service cloud.firestore {
 
     // Estructura preparada para los próximos prompts (todo desde el servidor por ahora):
     //   products/{slug}      catálogo (la web lo lee en el servidor con el Admin SDK)
-    //   ventas/{id}          pedidos y pagos
+    //   orders/{id}          ventas y pagos (solo servidor; la persona las lee por /api/pedidos)
+    //   carritos/{uid}       carrito guardado en la cuenta (solo servidor)
     //   configuracion/{id}   ajustes del sitio
     //   auditoria/{id}       cambios de roles
     // Cualquier otra ruta queda cerrada.

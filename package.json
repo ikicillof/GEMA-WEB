@@ -14,7 +14,9 @@
     "test:auth": "node --env-file=.env.local scripts/test-auth-flow.mjs",
     "migrar:catalogo": "tsx --env-file=.env.local scripts/migrar-catalogo.ts",
     "vincular:modelos": "tsx --env-file=.env.local scripts/vincular-modelos.ts",
-    "test:checkout": "node --env-file=.env.local scripts/test-checkout.mjs"
+    "test:checkout": "node --env-file=.env.local scripts/test-checkout.mjs",
+    "test:pagos": "tsx --conditions=react-server --env-file=.env.local scripts/test-pagos.mts",
+    "limpiar:pruebas": "tsx --env-file=.env.local scripts/limpiar-pruebas.ts"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",
