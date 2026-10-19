@@ -822,12 +822,8 @@ body.nf-active .gemi-global { visibility:hidden; }
 .auth-link:focus-visible, .auth-google:focus-visible, .ship-option:focus-within, .branch:focus-within, .user-dropdown a:focus-visible, .user-dropdown button:focus-visible { outline:3px solid var(--violet); outline-offset:2px; }
 .user-dropdown a:focus-visible, .user-dropdown button:focus-visible { background:var(--blush); }
 
-/* Botón "Guardar y continuar" que se escapa: la zona de juego es solo para él (no hay otros elementos adentro) */
-.escape-zone { display:flex; justify-content:center; }
+/* Botón "Guardar y continuar": rebota en su lugar si faltan datos */
+.save-zone { display:flex; justify-content:center; }
 .checkout-save { will-change:transform; }
-@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference) {
-  .escape-zone { align-items:center; min-height:210px; } /* margen de sobra: el rebote de gomita se pasa un poco del punto final */
-  .checkout-save { width:54%; min-width:140px; }
-}
 
 .checkout-title { word-spacing:.14em; } /* con el contorno grueso las palabras se pegaban */

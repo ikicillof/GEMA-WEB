@@ -19,12 +19,6 @@ type Errores = Partial<Record<keyof DatosEnvio, string>>
 // Cómo se nombra cada campo en el mensaje de "falta completar".
 const ETIQUETAS: Record<keyof DatosEnvio, string> = { nombre: 'nombre y apellido', dni: 'DNI', telefono: 'teléfono', email: 'email', calle: 'calle', numero: 'número', piso: 'piso', localidad: 'localidad', provincia: 'provincia', cp: 'código postal' }
 
-// Gemi fijo se ríe un momento (usa el evento que ya escucha GemiGlobal).
-function gemiSeRie() {
-  window.dispatchEvent(new CustomEvent('gemma-gemi-mood', { detail: { mood: 'laughing' } }))
-  window.setTimeout(() => window.dispatchEvent(new CustomEvent('gemma-gemi-mood', { detail: { mood: null } })), 1300)
-}
-
 function validar(d: DatosEnvio): Errores {
   const e: Errores = {}
   if (d.nombre.trim().length < 2) e.nombre = 'Ingresá tu nombre completo'
@@ -65,27 +59,18 @@ export function CheckoutClient() {
   const envioElegido = !!resumen?.envio && (modalidad !== 'sucursal' || !!sucursal)
   const completo = formValido && envioElegido
 
-  // --- Botón "Guardar y continuar": con datos incompletos se escapa del mouse (solo con cursor y sin reduced-motion) ---
+  // --- Botón "Guardar y continuar": con datos incompletos rebota al tocarlo y marca lo que falta ---
   const botonRef = useRef<HTMLButtonElement>(null)
-  const zonaRef = useRef<HTMLDivElement>(null)
-  const escapes = useRef(0) // cuántas veces se escapó; a la tercera avisa qué falta, pero sigue escapándose hasta que esté todo completo
-  const saltando = useRef(false)
-  const entorno = useRef({ cursor: false, reducido: false })
+  const entorno = useRef({ reducido: false })
 
   useEffect(() => {
-    entorno.current = {
-      cursor: window.matchMedia('(hover: hover) and (pointer: fine)').matches,
-      reducido: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-    }
-    const acomodar = () => { if (botonRef.current) gsap.set(botonRef.current, { x: 0, y: 0, rotation: 0 }) }
-    window.addEventListener('resize', acomodar)
-    return () => { window.removeEventListener('resize', acomodar); if (botonRef.current) gsap.killTweensOf(botonRef.current) }
+    entorno.current = { reducido: window.matchMedia('(prefers-reduced-motion: reduce)').matches }
+    return () => { if (botonRef.current) gsap.killTweensOf(botonRef.current) }
   }, [])
 
   // Con todo completo el botón se queda quieto y funciona normal.
   useEffect(() => {
     if (!completo) return
-    escapes.current = 0; saltando.current = false
     if (botonRef.current) { gsap.killTweensOf(botonRef.current); gsap.to(botonRef.current, { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, duration: 0.3 }) }
   }, [completo])
 
@@ -185,51 +170,16 @@ export function CheckoutClient() {
     destino.querySelector<HTMLElement>('input, select')?.focus({ preventScroll: true })
   }
 
-  const sacudir = () => {
+  // Rebote de gomita en su lugar (se aplasta, se estira y vuelve) más una sacudida corta. No se mueve de sitio.
+  const rebotar = () => {
     const b = botonRef.current
     if (!b || entorno.current.reducido) return
-    gsap.to(b, { keyframes: [{ x: -10, rotation: -3, duration: 0.07 }, { x: 9, rotation: 3, duration: 0.07 }, { x: -7, rotation: -2, duration: 0.07 }, { x: 5, rotation: 1.5, duration: 0.07 }, { x: 0, rotation: 0, duration: 0.1 }], overwrite: 'auto' })
-  }
-
-  // Salta con rebote de gomita a otro punto de su zona, lejos del cursor.
-  const huir = (cursorX: number, cursorY: number) => {
-    const b = botonRef.current, z = zonaRef.current
-    if (!b || !z) return
-    saltando.current = true
-    const zr = z.getBoundingClientRect(), br = b.getBoundingClientRect()
-    const x0 = Number(gsap.getProperty(b, 'x')), y0 = Number(gsap.getProperty(b, 'y'))
-    const dxMax = Math.max(0, (zr.width - b.offsetWidth) / 2 - 24), dyMax = Math.max(0, (zr.height - b.offsetHeight) / 2 - 24)
-    const cx = br.left + br.width / 2 - x0, cy = br.top + br.height / 2 - y0 // centro del botón en su lugar
-    const lejos = (p: { x: number; y: number }) => Math.hypot(cx + p.x - cursorX, cy + p.y - cursorY)
-    const candidatos = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1]]
-      .map(([a, c]) => ({ x: a * dxMax, y: c * dyMax }))
-      .filter(p => Math.hypot(p.x - x0, p.y - y0) > 24)
-      .sort((a, c) => lejos(c) - lejos(a))
-    const elegido = candidatos[Math.floor(Math.random() * Math.min(3, candidatos.length))] ?? { x: 0, y: 0 }
-    gsap.timeline({ onComplete: () => { saltando.current = false } })
-      .to(b, { scaleX: 1.22, scaleY: 0.8, duration: 0.09, ease: 'power2.out' })
-      .to(b, { x: elegido.x, y: elegido.y, rotation: gsap.utils.random(-4, 4), duration: 0.8, ease: 'elastic.out(1, 0.45)' }, '>-0.02')
-      .to(b, { scaleX: 1, scaleY: 1, duration: 0.7, ease: 'elastic.out(1.1, 0.35)' }, '<')
-  }
-
-  // A la tercera vez vuelve a su lugar, se sacude y marca lo que falta (con scroll al primer campo). Después sigue escapándose.
-  const rendirse = () => {
-    const b = botonRef.current
-    if (!b) { marcarFaltantes(); return }
-    saltando.current = true
-    gsap.timeline({ onComplete: () => { saltando.current = false } })
-      .to(b, { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, duration: 0.55, ease: 'elastic.out(1, 0.5)' })
-      .add(marcarFaltantes, '<0.15')
-      .to(b, { keyframes: [{ x: -10, rotation: -3, duration: 0.07 }, { x: 9, rotation: 3, duration: 0.07 }, { x: -7, rotation: -2, duration: 0.07 }, { x: 5, rotation: 1.5, duration: 0.07 }, { x: 0, rotation: 0, duration: 0.1 }] }, '>-0.1')
-  }
-
-  const alAcercarse = (e: React.PointerEvent<HTMLButtonElement>) => {
-    const { cursor, reducido } = entorno.current
-    if (completo || !cursor || reducido || e.pointerType !== 'mouse' || saltando.current) return
-    escapes.current += 1
-    gemiSeRie()
-    if (escapes.current === 3) rendirse()
-    else huir(e.clientX, e.clientY)
+    gsap.killTweensOf(b)
+    gsap.timeline()
+      .set(b, { x: 0, y: 0, rotation: 0 })
+      .to(b, { scaleX: 1.2, scaleY: 0.8, duration: 0.09, ease: 'power2.out' })
+      .to(b, { scaleX: 1, scaleY: 1, duration: 0.8, ease: 'elastic.out(1.1, 0.35)' })
+      .to(b, { keyframes: [{ x: -10, rotation: -3, duration: 0.07 }, { x: 9, rotation: 3, duration: 0.07 }, { x: -7, rotation: -2, duration: 0.07 }, { x: 5, rotation: 1.5, duration: 0.07 }, { x: 0, rotation: 0, duration: 0.1 }] }, '<0.05')
   }
 
   const guardar = async () => {
@@ -245,10 +195,10 @@ export function CheckoutClient() {
     setGuardando(false)
   }
 
-  // Click, toque, Enter o espacio. Incompleto: celular/táctil se sacude; teclado (detail 0) no se mueve y solo lleva el foco.
+  // Click, toque, Enter o espacio. Incompleto: mouse/táctil rebota; teclado (detail 0) no se mueve y solo lleva el foco.
   const alTocar = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (completo) { void guardar(); return }
-    if (e.detail > 0) sacudir()
+    if (e.detail > 0) rebotar()
     marcarFaltantes()
   }
 
@@ -366,8 +316,8 @@ export function CheckoutClient() {
               <small>Tarjetas y otros medios</small>
             </div>
           </div>}
-          <div className="escape-zone" ref={zonaRef}>
-            <button ref={botonRef} type="button" className="button button--pink checkout-save" onPointerEnter={alAcercarse} onClick={alTocar} disabled={guardando}
+          <div className="save-zone">
+            <button ref={botonRef} type="button" className="button button--pink checkout-save" onClick={alTocar} disabled={guardando}
               aria-label={completo ? undefined : 'Completá los datos obligatorios para continuar'}>
               {guardando ? 'Guardando…' : <>Guardar y continuar <Check size={16} /></>}
             </button>
