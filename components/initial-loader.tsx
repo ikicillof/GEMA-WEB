@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
-import { GemiSidekick } from './gemi-sidekick'
+import { CargaGemmaCentro } from './carga-gemma'
 
 export function InitialLoader() {
   const [visible, setVisible] = useState(true)
@@ -20,5 +20,5 @@ export function InitialLoader() {
     return () => { window.clearTimeout(openTimer); window.clearTimeout(hideTimer) }
   }, [])
   if (!visible) return null
-  return <div className={`initial-loader ${opening ? 'initial-loader--opening' : ''}`} aria-label="Cargando Gemma"><div className="initial-loader__center"><Image className="initial-loader__logo" src="/productos/logo-transparent.png" alt="Gemma" width={270} height={120} priority /><GemiSidekick tone="pink" /></div><span className="initial-loader__spark initial-loader__spark--one" /><span className="initial-loader__spark initial-loader__spark--two" /><div className="initial-loader__leaf initial-loader__leaf--left" /><div className="initial-loader__leaf initial-loader__leaf--right" /></div>
+  return <div className={`initial-loader ${opening ? 'initial-loader--opening' : ''}`} aria-label="Cargando Gemma"><CargaGemmaCentro /><div className="initial-loader__leaf initial-loader__leaf--left" /><div className="initial-loader__leaf initial-loader__leaf--right" /></div>
 }

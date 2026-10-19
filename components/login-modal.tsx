@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { MailCheck, X } from 'lucide-react'
 import { ErrorAuth, useAuth, type ModoLogin } from './auth-provider'
+import { CargaGemma } from './carga-gemma'
 import { GemmaStar } from './gemma-ornament'
 
 const TITULOS: Record<ModoLogin, { kicker: string; titulo: string }> = {
@@ -100,7 +101,8 @@ export function LoginModal() {
           {error && <p className="auth-error" role="alert">{error.message}{error.codigo === 'no-verificado' && !reenviado && <> <button type="button" className="auth-link" onClick={() => correr(async () => { await reenviarVerificacion(email, password); setReenviado(true) })}>Reenviar email</button></>}</p>}
           {reenviado && <p className="auth-ok" role="status">Listo, te mandamos otro email de verificación.</p>}
 
-          <button type="submit" className="button button--pink auth-submit" disabled={enviando}>{enviando ? 'Un momento…' : modo === 'ingresar' ? 'Ingresar' : modo === 'registro' ? 'Crear cuenta' : 'Enviar enlace'}</button>
+          <button type="submit" className="button button--pink auth-submit" disabled={enviando}>{modo === 'ingresar' ? 'Ingresar' : modo === 'registro' ? 'Crear cuenta' : 'Enviar enlace'}</button>
+          <CargaGemma compacta activa={enviando} mensaje={modo === 'ingresar' ? 'Ingresando a tu cuenta…' : modo === 'registro' ? 'Creando tu cuenta…' : 'Enviando el enlace…'} />
         </form>
 
         <div className="auth-links">

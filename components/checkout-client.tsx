@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import gsap from 'gsap'
-import { Building2, Check, Home, MessageCircle, Truck } from 'lucide-react'
+import { Building2, Home, MessageCircle, Truck } from 'lucide-react'
 import {
   CP_REGEX, DATOS_ENVIO_VACIOS, PROVINCIAS, mensajeWhatsApp, plazoTexto,
   type DatosEnvio, type ItemPedido, type Modalidad, type OpcionEnvio, type ResumenCheckout, type Sucursal,
@@ -13,6 +13,7 @@ import {
 import type { MetodoPago } from '@/lib/pedidos'
 import { formatPrice } from '@/lib/products'
 import { useAuth } from './auth-provider'
+import { CargaGemma } from './carga-gemma'
 import { useCart } from './cart-context'
 import { easeInOutSine, getLenis } from './smooth-scroll'
 
@@ -39,8 +40,9 @@ export function CheckoutClient() {
   const { sesion, cargando, abrirLogin, llamar } = useAuth()
   const { items, clearCart } = useCart()
   const router = useRouter()
-  const [listoParaPagar, setListoParaPagar] = useState(false) // datos guardados: se muestran las formas de pago
   const [pagando, setPagando] = useState<MetodoPago | null>(null)
+  const [metodoCarga, setMetodoCarga] = useState<MetodoPago>('mercadopago') // para que el mensaje de la pantalla de carga no cambie mientras se cierra
+  const enCurso = useRef(false) // evita crear dos pedidos si se toca dos veces antes de que React bloquee los botones
   const [datos, setDatos] = useState<DatosEnvio>(DATOS_ENVIO_VACIOS)
   const [intento, setIntento] = useState(false)
   const [opciones, setOpciones] = useState<OpcionEnvio[] | null>(null)
@@ -51,7 +53,6 @@ export function CheckoutClient() {
   const [sucursales, setSucursales] = useState<Sucursal[] | null>(null)
   const [sucursal, setSucursal] = useState<string | null>(null)
   const [resumen, setResumen] = useState<ResumenCheckout | null>(null)
-  const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState<{ ok: boolean; texto: string } | null>(null)
   const pidioLogin = useRef(false)
 
@@ -63,20 +64,27 @@ export function CheckoutClient() {
   const cpListo = CP_REGEX.test(datos.cp) && !!datos.provincia
   const envioElegido = !!resumen?.envio && (modalidad !== 'sucursal' || !!sucursal)
   const completo = formValido && envioElegido
+  const hayCotizacion = !!opciones && !cotizando && !errorEnvio
 
-  // --- Botón "Guardar y continuar": con datos incompletos rebota al tocarlo y marca lo que falta ---
-  const botonRef = useRef<HTMLButtonElement>(null)
-  const entorno = useRef({ reducido: false })
+  // --- Botones de pago: con datos incompletos escapan del mouse (3 veces), rebotan al tocarlos y marcan lo que falta ---
+  const botones = useRef<Record<MetodoPago, HTMLButtonElement | null>>({ mercadopago: null, transferencia: null })
+  const escapes = useRef<Record<MetodoPago, number>>({ mercadopago: 0, transferencia: 0 })
+  const entorno = useRef({ reducido: false, punteroFino: false })
 
   useEffect(() => {
-    entorno.current = { reducido: window.matchMedia('(prefers-reduced-motion: reduce)').matches }
-    return () => { if (botonRef.current) gsap.killTweensOf(botonRef.current) }
+    entorno.current = {
+      reducido: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+      punteroFino: window.matchMedia('(hover: hover) and (pointer: fine)').matches,
+    }
+    const guardados = botones.current
+    return () => { for (const b of Object.values(guardados)) if (b) gsap.killTweensOf(b) }
   }, [])
 
-  // Con todo completo el botón se queda quieto y funciona normal.
+  // Con todo completo los botones vuelven a su lugar y quedan quietos; si vuelven a quedar incompletos, vuelven a escapar.
   useEffect(() => {
+    escapes.current = { mercadopago: 0, transferencia: 0 }
     if (!completo) return
-    if (botonRef.current) { gsap.killTweensOf(botonRef.current); gsap.to(botonRef.current, { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, duration: 0.3 }) }
+    for (const b of Object.values(botones.current)) if (b) { gsap.killTweensOf(b); gsap.to(b, { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, duration: 0.3 }) }
   }, [completo])
 
   // Los datos válidos se guardan solos en la cuenta (sin mensajes), así no se pierden aunque el envío tenga que coordinarse por WhatsApp.
@@ -175,52 +183,60 @@ export function CheckoutClient() {
     destino.querySelector<HTMLElement>('input, select')?.focus({ preventScroll: true })
   }
 
-  // Rebote de gomita en su lugar (se aplasta, se estira y vuelve) más una sacudida corta. No se mueve de sitio.
-  const rebotar = () => {
-    const b = botonRef.current
+  // Rebote de gomita en su lugar (se aplasta, se estira y vuelve) más una sacudida corta.
+  const rebotar = (metodo: MetodoPago) => {
+    const b = botones.current[metodo]
     if (!b || entorno.current.reducido) return
     gsap.killTweensOf(b)
     gsap.timeline()
-      .set(b, { x: 0, y: 0, rotation: 0 })
-      .to(b, { scaleX: 1.2, scaleY: 0.8, duration: 0.09, ease: 'power2.out' })
+      .set(b, { rotation: 0 })
+      .to(b, { scaleX: 1.08, scaleY: 0.92, duration: 0.09, ease: 'power2.out' })
       .to(b, { scaleX: 1, scaleY: 1, duration: 0.8, ease: 'elastic.out(1.1, 0.35)' })
-      .to(b, { keyframes: [{ x: -10, rotation: -3, duration: 0.07 }, { x: 9, rotation: 3, duration: 0.07 }, { x: -7, rotation: -2, duration: 0.07 }, { x: 5, rotation: 1.5, duration: 0.07 }, { x: 0, rotation: 0, duration: 0.1 }] }, '<0.05')
+      .to(b, { keyframes: [{ x: '-=10', rotation: -3, duration: 0.07 }, { x: '+=19', rotation: 3, duration: 0.07 }, { x: '-=16', rotation: -2, duration: 0.07 }, { x: '+=12', rotation: 1.5, duration: 0.07 }, { x: '-=5', rotation: 0, duration: 0.1 }] }, '<0.05')
   }
 
-  const guardar = async () => {
-    setGuardando(true)
-    try {
-      const res = await llamar('/api/cuenta/envio', { method: 'PUT', body: JSON.stringify(datos) })
-      setMensaje(res.ok
-        ? { ok: true, texto: 'Listo, guardamos tus datos. Elegí cómo querés pagar.' }
-        : { ok: false, texto: 'No pudimos guardar tus datos. Probá de nuevo.' })
-      if (res.ok) setListoParaPagar(true)
-    } catch {
-      setMensaje({ ok: false, texto: 'No pudimos guardar tus datos. Revisá tu conexión.' })
+  // Escritorio: el botón se escapa del cursor; a la tercera vez se rinde, se queda quieto y marca lo que falta.
+  const escapar = (metodo: MetodoPago, e: React.PointerEvent<HTMLButtonElement>) => {
+    const b = botones.current[metodo]
+    if (!b || completo || !hayCotizacion || pagando || e.pointerType !== 'mouse') return
+    if (entorno.current.reducido || !entorno.current.punteroFino) return
+    gsap.killTweensOf(b)
+    if (++escapes.current[metodo] >= 3) {
+      gsap.to(b, { x: 0, y: 0, rotation: 0, duration: 0.35, ease: 'power2.out', onComplete: () => rebotar(metodo) })
+      marcarFaltantes()
+      return
     }
-    setGuardando(false)
+    const r = b.getBoundingClientRect()
+    let dx = (r.left + r.width / 2 >= e.clientX ? 1 : -1) * (70 + Math.random() * 50)
+    let dy = (r.top + r.height / 2 >= e.clientY ? 1 : -1) * (30 + Math.random() * 30)
+    if (r.left + dx < 8 || r.right + dx > window.innerWidth - 8) dx = -dx
+    if (r.top + dy < 110 || r.bottom + dy > window.innerHeight - 8) dy = -dy
+    gsap.to(b, { x: `+=${dx}`, y: `+=${dy}`, rotation: gsap.utils.random(-6, 6), duration: 0.35, ease: 'back.out(1.6)' })
   }
 
-  // Si dejan de estar completos los datos o el envío, vuelve a pedirse "Guardar y continuar".
-  useEffect(() => { if (!completo) setListoParaPagar(false) }, [completo])
-
-  // Crea la venta en el servidor (que recalcula todos los montos) y lleva al pago.
+  // Valida, guarda los datos en la cuenta y crea la venta en el servidor (que recalcula todos los montos), todo en un paso.
   const pagar = async (metodoPago: MetodoPago) => {
-    if (!completo || !modalidad || pagando) return
+    if (enCurso.current || !completo || !modalidad) return
+    enCurso.current = true
+    setMetodoCarga(metodoPago)
     setPagando(metodoPago)
     setMensaje(null)
+    const fallar = (texto: string) => { setMensaje({ ok: false, texto }); enCurso.current = false; setPagando(null) }
     try {
+      const datosLimpios = { ...datos, nombre: datos.nombre.trim(), email: datos.email.trim() }
+      const guardado = await llamar('/api/cuenta/envio', { method: 'PUT', body: JSON.stringify(datosLimpios) })
+      if (!guardado.ok) return fallar('No pudimos guardar tus datos. Probá de nuevo.')
       const res = await llamar('/api/checkout/pedido', {
         method: 'POST',
         body: JSON.stringify({
           items: pedido,
           envio: { modalidad, cp: datos.cp, provincia: datos.provincia, ...(modalidad === 'sucursal' && sucursal ? { sucursal } : {}) },
-          datosEnvio: { ...datos, nombre: datos.nombre.trim(), email: datos.email.trim() },
+          datosEnvio: datosLimpios,
           metodoPago,
         }),
       })
       const cuerpo = await res.json().catch(() => ({}))
-      if (!res.ok) { setMensaje({ ok: false, texto: cuerpo.error || 'No pudimos crear tu pedido. Probá de nuevo.' }); setPagando(null); return }
+      if (!res.ok) return fallar(cuerpo.error || 'No pudimos crear tu pedido. Probá de nuevo.')
       if (metodoPago === 'transferencia') {
         clearCart()
         router.push(`/checkout/resultado?pedido=${encodeURIComponent(cuerpo.pedidoId)}&r=transferencia`)
@@ -231,15 +247,15 @@ export function CheckoutClient() {
       if (destino.protocol !== 'https:' || !/(^|\.)mercadopago\.com(\.ar)?$/.test(destino.hostname)) throw new Error('destino inesperado')
       window.location.assign(destino.href)
     } catch {
-      setMensaje({ ok: false, texto: 'No pudimos iniciar el pago. Revisá tu conexión y probá de nuevo.' })
-      setPagando(null)
+      fallar('No pudimos iniciar el pago. Revisá tu conexión y probá de nuevo.')
     }
   }
 
-  // Click, toque, Enter o espacio. Incompleto: mouse/táctil rebota; teclado (detail 0) no se mueve y solo lleva el foco.
-  const alTocar = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (completo) { void guardar(); return }
-    if (e.detail > 0) rebotar()
+  // Click, toque, Enter o espacio. Incompleto: mouse/táctil rebota; teclado (detail 0) no se mueve y solo lleva el foco al primer campo.
+  const alTocar = (metodo: MetodoPago) => (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (pagando) return
+    if (completo) { void pagar(metodo); return }
+    if (e.detail > 0) rebotar(metodo)
     marcarFaltantes()
   }
 
@@ -251,7 +267,7 @@ export function CheckoutClient() {
     </label>
   )
 
-  if (cargando) return <section className="page-hero"><div className="shell"><p className="eyebrow">Finalizar compra</p><h1 className="page-title">Un momento…</h1></div></section>
+  if (cargando) return <CargaGemma mensaje="Preparando tu compra…" />
 
   if (!sesion) return <section className="page-hero"><div className="shell">
     <p className="eyebrow">Finalizar compra</p><h1 className="page-title">Ingresá para continuar</h1>
@@ -259,7 +275,7 @@ export function CheckoutClient() {
     <button type="button" className="button button--pink" onClick={() => abrirLogin('ingresar', '/checkout')}>Ingresar</button>
   </div></section>
 
-  if (!items.length) return <section className="page-hero"><div className="shell">
+  if (!items.length && !pagando) return <section className="page-hero"><div className="shell">
     <p className="eyebrow">Finalizar compra</p><h1 className="page-title">Tu carrito está vacío</h1>
     <Link href="/tienda" className="button button--pink">Ir a la tienda</Link>
   </div></section>
@@ -305,7 +321,7 @@ export function CheckoutClient() {
           <div id="checkout-envio" className={`checkout-card ${intento && !envioElegido ? 'checkout-card--error' : ''}`}>
             <h2>Envío con Correo Argentino</h2>
             {!cpListo && <p className="checkout-hint">Completá la provincia y el código postal para ver las opciones de envío.</p>}
-            {cotizando && <p className="checkout-hint" role="status">Cotizando tu envío…</p>}
+            <CargaGemma compacta activa={cotizando} mensaje="Buscando tu envío…" />
             {simulado && opciones && <p className="checkout-sim">Cotización de prueba: todavía no están cargadas las credenciales de Correo Argentino.</p>}
             {opciones && <div className="ship-options" role="radiogroup" aria-label="Modalidad de envío">
               {opciones.map(o => <label key={o.modalidad} className={`ship-option ${modalidad === o.modalidad ? 'ship-option--on' : ''}`}>
@@ -317,7 +333,7 @@ export function CheckoutClient() {
             </div>}
             {modalidad === 'sucursal' && <div className="branches">
               <h3>Sucursales cerca del {datos.cp}</h3>
-              {!sucursales && !errorEnvio && <p className="checkout-hint" role="status">Buscando sucursales…</p>}
+              <CargaGemma compacta activa={!sucursales && !errorEnvio} mensaje="Buscando sucursales cerca tuyo…" />
               {sucursales?.length === 0 && <p className="checkout-hint">No encontramos sucursales para ese código postal. Probá a domicilio o coordinemos por WhatsApp.</p>}
               {sucursales?.map(s => <label key={s.codigo} className={`branch ${sucursal === s.codigo ? 'branch--on' : ''}`}>
                 <input type="radio" name="sucursal" checked={sucursal === s.codigo} onChange={() => setSucursal(s.codigo)} />
@@ -328,6 +344,25 @@ export function CheckoutClient() {
               <p>{errorEnvio}</p>
               <a className="button button--dark" href={whatsapp} target="_blank" rel="noopener noreferrer"><MessageCircle size={16} /> Coordinar el envío por WhatsApp</a>
             </div>}
+          </div>
+
+          <div id="checkout-pago" className="checkout-card checkout-pay">
+            <h2>Elegí cómo pagar</h2>
+            {!hayCotizacion && !errorEnvio && <p className="checkout-hint" id="pago-aviso">Completá tu código postal para calcular el envío</p>}
+            <div className="pay-actions">
+              <button ref={el => { botones.current.mercadopago = el }} type="button" className="button button--dark pay-btn" onClick={alTocar('mercadopago')} onPointerEnter={e => escapar('mercadopago', e)}
+                disabled={!hayCotizacion || !!pagando} aria-describedby={hayCotizacion ? undefined : 'pago-aviso'}>
+                <span>Pagar con Mercado Pago</span>
+                {resumen?.envio && <strong>{formatPrice(resumen.mercadoPago.total)}</strong>}
+              </button>
+              <button ref={el => { botones.current.transferencia = el }} type="button" className="button button--pink pay-btn" onClick={alTocar('transferencia')} onPointerEnter={e => escapar('transferencia', e)}
+                disabled={!hayCotizacion || !!pagando} aria-describedby={hayCotizacion ? undefined : 'pago-aviso'}>
+                <span>Pagar por transferencia{resumen ? ` (${resumen.transferencia.descuentoPct}% OFF)` : ''}</span>
+                {resumen?.envio && <strong>{formatPrice(resumen.transferencia.total)}</strong>}
+              </button>
+            </div>
+            {resumen?.envio && resumen.transferencia.descuento > 0 && <p className="checkout-hint">Con transferencia ahorrás {formatPrice(resumen.transferencia.descuento)} en productos.</p>}
+            {mensaje && <p className={mensaje.ok ? 'auth-ok' : 'auth-error'} role={mensaje.ok ? 'status' : 'alert'}>{mensaje.texto}</p>}
           </div>
         </div>
 
@@ -344,37 +379,10 @@ export function CheckoutClient() {
             <div><dt>Subtotal</dt><dd>{resumen ? formatPrice(resumen.subtotal) : '…'}</dd></div>
             <div><dt><Truck size={14} /> Envío</dt><dd>{resumen?.envio ? formatPrice(resumen.envio.precio) : modalidad ? '…' : 'Elegí una opción'}</dd></div>
           </dl>
-          {resumen && <div className="pay-compare">
-            <div className="pay-card pay-card--transfer">
-              <span className="pay-tag">{resumen.transferencia.descuentoPct}% OFF</span>
-              <p>Transferencia</p>
-              <strong>{formatPrice(resumen.transferencia.total)}</strong>
-              <small>Ahorrás {formatPrice(resumen.transferencia.descuento)} en productos</small>
-            </div>
-            <div className="pay-card">
-              <p>Mercado Pago</p>
-              <strong>{formatPrice(resumen.mercadoPago.total)}</strong>
-              <small>Tarjetas y otros medios</small>
-            </div>
-          </div>}
-          <div className="save-zone">
-            <button ref={botonRef} type="button" className="button button--pink checkout-save" onClick={alTocar} disabled={guardando}
-              aria-label={completo ? undefined : 'Completá los datos obligatorios para continuar'}>
-              {guardando ? 'Guardando…' : <>Guardar y continuar <Check size={16} /></>}
-            </button>
-          </div>
-          {mensaje && <p className={mensaje.ok ? 'auth-ok' : 'auth-error'} role={mensaje.ok ? 'status' : 'alert'}>{mensaje.texto}</p>}
-          {listoParaPagar && resumen && <div className="pay-actions">
-            <button type="button" className="button button--dark" onClick={() => void pagar('mercadopago')} disabled={!!pagando}>
-              {pagando === 'mercadopago' ? 'Abriendo Mercado Pago…' : <>Pagar con Mercado Pago · {formatPrice(resumen.mercadoPago.total)}</>}
-            </button>
-            <button type="button" className="button button--pink" onClick={() => void pagar('transferencia')} disabled={!!pagando}>
-              {pagando === 'transferencia' ? 'Creando tu pedido…' : <>Pagar por transferencia · {formatPrice(resumen.transferencia.total)}</>}
-            </button>
-          </div>}
           <p className="drawer-note">Los montos se calculan en nuestro servidor con los precios vigentes.</p>
         </aside>
       </div>
     </div>
+    <CargaGemma activa={!!pagando} mensaje={metodoCarga === 'mercadopago' ? 'Preparando tu pago…' : 'Guardando tu pedido…'} />
   </section>
 }

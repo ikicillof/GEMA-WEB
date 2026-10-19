@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/components/auth-provider'
+import { CargaGemma } from '@/components/carga-gemma'
 import { PedidoDetalle } from '@/components/pedido-detalle'
 import type { PedidoPublico } from '@/lib/pedidos'
 
@@ -23,7 +24,10 @@ export default function MisComprasPage() {
     return () => { cancelado = true }
   }, [uid, llamar])
 
-  if (!cargando && sesion && lista?.length) {
+  const esperando = cargando || (!!sesion && !lista && !error)
+  if (esperando) return <CargaGemma mensaje="Buscando tus compras…" />
+
+  if (sesion && lista?.length) {
     return <section className="checkout"><div className="shell">
       <p className="eyebrow">Tu cuenta</p>
       <h1 className="page-title checkout-title">Mis compras</h1>
@@ -34,10 +38,8 @@ export default function MisComprasPage() {
   return <section className="page-hero"><div className="shell">
     <p className="eyebrow">Tu cuenta</p>
     <h1 className="page-title">Mis compras</h1>
-    {cargando ? <p className="page-hero-copy">Un momento…</p>
-      : !sesion ? <><p className="page-hero-copy">Ingresá para ver tus pedidos.</p><button type="button" className="button button--pink" onClick={() => abrirLogin('ingresar')}>Ingresar</button></>
+    {!sesion ? <><p className="page-hero-copy">Ingresá para ver tus pedidos.</p><button type="button" className="button button--pink" onClick={() => abrirLogin('ingresar')}>Ingresar</button></>
       : error ? <p className="page-hero-copy" role="alert">{error}</p>
-      : !lista ? <p className="page-hero-copy">Un momento…</p>
       : <><p className="page-hero-copy">Todavía no tenés compras. Cuando hagas tu primer pedido lo vas a ver acá.</p><Link href="/tienda" className="button button--pink">Ir a la tienda</Link></>}
   </div></section>
 }
