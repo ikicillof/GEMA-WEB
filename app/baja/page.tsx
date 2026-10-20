@@ -6,7 +6,7 @@ import { verificarBaja } from '@/lib/server/novedades-token'
 import { DeshacerBaja } from './deshacer-baja'
 
 export const dynamic = 'force-dynamic'
-export const metadata: Metadata = { title: 'Darme de baja — Gemma', robots: { index: false, follow: false } }
+export const metadata: Metadata = { title: 'Darme de baja', robots: { index: false, follow: false } }
 
 /**
  * Link «Darme de baja» de los mails. Sin login: el token firmado de la dirección identifica a la persona.

@@ -1,9 +1,9 @@
-import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Dato, EmailContacto, LegalLayout } from '@/components/legal'
 import { CONDICIONES, VENDEDORA } from '@/lib/vendedora'
+import { metaPagina } from '@/lib/seo'
 
-export const metadata: Metadata = { title: 'Cambios y devoluciones — Gemma', description: 'Cómo cambiar o devolver un producto de Gemma, el derecho de arrepentimiento y los productos personalizados.' }
+export const metadata = metaPagina({ titulo: 'Cambios y devoluciones', descripcion: 'Cómo cambiar o devolver un producto de Gemma, el derecho de arrepentimiento y los productos personalizados.', ruta: '/devoluciones' })
 
 export default function DevolucionesPage() {
   return <LegalLayout kicker="Legales" titulo="Cambios y devoluciones" nota={<p><b>Productos personalizados en color:</b> elegir un color de una paleta estándar probablemente NO alcanza para considerar que un producto es «claramente personalizado» y excluirlo del arrepentimiento (Código Civil y Comercial, art. 1116, inc. c). Por eso el texto de abajo es conservador y deja el criterio final en el marcador. Que lo defina con el abogado antes de publicar.</p>}>

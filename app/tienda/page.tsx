@@ -1,8 +1,11 @@
 import { DeliveryMap } from '@/components/delivery-map'
 import { ShopClient } from '@/components/shop-client'
 import { getProductos, REVALIDAR_PAGINAS } from '@/lib/server/catalogo'
+import { metaPagina } from '@/lib/seo'
 
 export const revalidate = REVALIDAR_PAGINAS
+
+export const metadata = metaPagina({ titulo: 'Tienda de objetos impresos en 3D', descripcion: 'Calendarios, estantes y piezas de diseño impresas en 3D, hechas a pedido en el color que elegís. Envíos a todo el país por Correo Argentino.', ruta: '/tienda' })
 
 export default async function StorePage() {
   const products = await getProductos()

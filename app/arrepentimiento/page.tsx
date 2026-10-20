@@ -1,9 +1,9 @@
-import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrepentimientoForm } from '@/components/arrepentimiento-form'
 import { LegalLayout } from '@/components/legal'
+import { metaPagina } from '@/lib/seo'
 
-export const metadata: Metadata = { title: 'Botón de arrepentimiento — Gemma', description: 'Pedí arrepentirte de tu compra online dentro de los 10 días corridos. Sin cuenta y sin dar explicaciones.' }
+export const metadata = metaPagina({ titulo: 'Botón de arrepentimiento', descripcion: 'Pedí arrepentirte de tu compra online dentro de los 10 días corridos. Sin cuenta y sin dar explicaciones.', ruta: '/arrepentimiento' })
 
 export default function ArrepentimientoPage() {
   return <LegalLayout kicker="Legales" titulo="Botón de arrepentimiento" nota={<p><b>Botón de arrepentimiento (Res. 424/2020):</b> el formulario guarda cada pedido en la colección <code>arrepentimientos</code> de Firestore, manda un mail a <code>emailAvisos</code> y otro a la persona con el n.º de trámite. Se gestiona en el panel, sección «Arrepentimientos». El plazo y el alcance para productos personalizados dependen de «Cambios y devoluciones».</p>}>

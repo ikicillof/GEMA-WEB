@@ -1,6 +1,6 @@
 'use client'
 
-import dynamic from 'next/dynamic'
+import { cargaDiferida } from './carga-diferida'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { invalidateSafe as invalidate } from '@/lib/safe-invalidate'
@@ -10,7 +10,7 @@ import { SectionSquiggles } from './section-squiggles'
 import type { Spec } from './squiggles'
 
 // La escena 3D se descarga recién cuando la sección está por entrar en pantalla.
-const ValuesScene = dynamic(() => import('./values-scene'), { ssr: false })
+const ValuesScene = cargaDiferida(() => import('./values-scene'))
 
 // Firuletes en los bordes (el centro lo ocupan el título y los objetos).
 const SPECS: Spec[] = [

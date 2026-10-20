@@ -152,3 +152,34 @@ Se reportó que al cliente le llegaba el aviso de la dueña. Revisado: el códig
 ## Casilla de novedades del login
 
 Se veía rara porque está fuera de `.auth-form` y no recibía el estilo de `.auth-form .auth-check` (fila, texto, tamaño). Ahora `.auth-check--novedades` tiene su propio estilo: caja con la casilla a la izquierda, texto de 13 px y borde violeta al tildar. No se pudo mirar en pantalla (el navegador de pruebas no estaba conectado): confirmar a ojo en el celular.
+
+## SEO y rendimiento (21/10)
+
+**Qué hay.** Todo se arma en `lib/seo.ts` (dominio canónico `gemma-oficial.com.ar`, `metaPagina()`, JSON-LD).
+- **Metadatos:** `metadataBase` desde `SITE_URL`, título con plantilla «%s | Gemma», `<html lang="es-AR">`, Open Graph (`es_AR`, `website`, «Gemma») y Twitter `summary_large_image`. Título, descripción y canonical propios en home, tienda, quiénes somos, contacto, las 4 páginas legales y cada producto (nombre, descripción corta y foto principal; las fotos de Cloudinary se encuadran a 1200x630 con la propia URL de Cloudinary).
+- **Imagen Open Graph general:** `public/og-gemma.png` (1200x630: logo, Gemi, «Hacemos que cada rincón brille», fondo oscuro del home). Es un PNG fijo (no se genera en el servidor: el generador de `next/og` falla en el build en Windows).
+- **Datos estructurados:** `Organization` en el home (con `sameAs` solo cuando se complete Instagram); `Product` (precio en ARS, marca Gemma, disponibilidad `InStock`, **sin reseñas ni calificaciones**) y `BreadcrumbList` en cada producto.
+- **`/sitemap.xml`** dinámico: páginas públicas + productos activos de Firestore con su fecha real de modificación. **`/robots.txt`**: bloquea `/admin`, `/checkout`, `/mis-compras`, `/mi-cuenta`, `/api`, `/auth` y `/baja` e indica el sitemap. Las páginas privadas llevan además `noindex` por metadata y por encabezado.
+- **Un solo dominio:** `middleware.ts` redirige `www.gemma-oficial.com.ar` → `gemma-oficial.com.ar` (301; el dominio principal configurado en Netlify es el **sin www**) y en cualquier otro host (`*.netlify.app`, localhost) agrega `X-Robots-Tag: noindex, nofollow`, y `robots.txt` devuelve `Disallow: /`.
+
+**Qué tenés que completar o confirmar**
+1. **`SITE_URL` en el contexto Production de Netlify tiene que ser `https://gemma-oficial.com.ar`** (de ahí salen los canonical, el sitemap y las imágenes Open Graph). En la rama `backend` queda la URL de Netlify, que igual sale con `noindex`.
+2. `VENDEDORA.instagram` en `lib/vendedora.ts` (marcador `[URL DE INSTAGRAM DE LA MARCA]`): mientras no se complete, el JSON-LD de Organization sale sin redes sociales.
+3. **Descripción de cada producto** (campo «descripción» en el panel): es lo que ven Google y WhatsApp. Si está vacía se usa una frase genérica («…pieza de diseño impresa en 3D por Gemma, hecha a pedido en el color que elegís»). Las de hoy son textos cortos del catálogo inicial.
+4. Confirmar la frase «Envíos a todo el país por Correo Argentino» de la descripción de `/tienda` y `availability: InStock` (se fabrica a pedido; schema.org no tiene «a pedido»).
+5. `ULTIMA_ACTUALIZACION_PAGINAS` (`lib/seo.ts`): fecha de `lastmod` de las páginas fijas; actualizarla cuando se edite su texto.
+6. Después de publicar: dar de alta el sitio en Google Search Console y enviar `https://gemma-oficial.com.ar/sitemap.xml`.
+
+**Rendimiento (medido en build local).**
+- **El motor 3D (three.js, ~680 KB) venía en el HTML inicial** aunque las escenas figuraban como «diferidas»: `home-journey` importaba una constante de `journey-scene` y `safe-invalidate` importaba R3F de forma estática. Ahora las constantes viven en `components/journey-timing.ts`, `safe-invalidate` importa R3F cuando ya hay una escena cargada, y las escenas se descargan con `cargaDiferida()` (`components/carga-diferida.tsx`) cuando el navegador está libre; la puerta del hero espera a `requestIdleCallback`. Todas van dentro de `EscenaSegura` (si el 3D falla, desaparece y el texto, el h1 y Gemi en SVG siguen).
+- **JavaScript inicial (First Load JS): home 394 kB → 158 kB; Quiénes somos 355 kB → 144 kB.** Se comprobó en el navegador que la puerta, la impresora y el desfile se dibujan igual.
+- **Imágenes:** se sacó `unoptimized` (config y componentes de producto): ahora Next/Netlify sirven WebP/AVIF a medida del dispositivo (una foto de producto de 515 KB pasó a 24 KB en la prueba local). Solo las 4 primeras tarjetas cargan con prioridad (antes eran todas) y la foto de hover es perezosa. **Verificar en el deploy** que `/_next/image?url=%2Fproductos%2Fpdfimg-004.png&w=640&q=75` responde 200 (el CDN de imágenes de Netlify no se pudo probar desde acá).
+- Poppins ya usaba `next/font`. Jerarquía: un h1 por página (en el home es «Hacemos que cada rincón brille», en HTML del servidor), tarjetas de la tienda como h2, secciones del recorrido como h2.
+
+**Cómo verificar**
+- Metadatos: ver el código fuente de cada página (Ctrl+U) o pegar la URL en <https://www.opengraph.xyz>; en WhatsApp, pegar el link de un producto.
+- Datos estructurados: Rich Results Test de Google con la URL de un producto.
+- Sitemap y robots: abrir `/sitemap.xml` y `/robots.txt` en `gemma-oficial.com.ar` (con productos y con `Allow`) y en la URL de Netlify (con `Disallow: /`).
+- Redirección: abrir `www.gemma-oficial.com.ar/tienda` y comprobar que cae en `gemma-oficial.com.ar/tienda`.
+- noindex: `curl -I https://<sitio-netlify>/` muestra `x-robots-tag: noindex, nofollow`.
+- Rendimiento: PageSpeed Insights en modo celular con la URL del home.

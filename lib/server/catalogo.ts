@@ -72,6 +72,25 @@ export async function getProducto(slug: string): Promise<Product | undefined> {
   return (await getProductos()).find(p => p.slug === slug)
 }
 
+/** Para el sitemap: slug de cada producto activo y cuándo se modificó por última vez en Firestore (ISO). */
+const leerParaSitemap = unstable_cache(
+  async () => {
+    const snap = await adminDb().collection('products').orderBy('orden').get()
+    return snap.docs.flatMap(doc => (aProducto(doc.id, doc.data()) ? [{ slug: doc.id, actualizado: doc.updateTime.toDate().toISOString() }] : []))
+  },
+  ['catalogo-sitemap-v1'],
+  { revalidate: 300, tags: ['catalogo'] },
+)
+
+export async function getProductosSitemap(): Promise<{ slug: string; actualizado: string | null }[]> {
+  try {
+    return await leerParaSitemap()
+  } catch (e) {
+    console.error('[sitemap] Firestore no respondió; uso el catálogo inicial:', (e as Error).message)
+    return catalogoInicial.map(p => ({ slug: p.slug, actualizado: null }))
+  }
+}
+
 /** Para el panel: después de crear o editar un producto, la web se actualiza al instante. */
 export function revalidarCatalogo() {
   revalidateTag('catalogo')

@@ -1,9 +1,9 @@
-import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Dato, EmailContacto, LegalLayout } from '@/components/legal'
 import { VENDEDORA } from '@/lib/vendedora'
+import { metaPagina } from '@/lib/seo'
 
-export const metadata: Metadata = { title: 'Política de privacidad — Gemma', description: 'Qué datos guarda Gemma, para qué los usa, con quién los comparte y cómo ejercer tus derechos según la Ley 25.326.' }
+export const metadata = metaPagina({ titulo: 'Política de privacidad', descripcion: 'Qué datos guarda Gemma, para qué los usa, con quién los comparte y cómo ejercer tus derechos según la Ley 25.326.', ruta: '/privacidad' })
 
 export default function PrivacidadPage() {
   return <LegalLayout kicker="Legales" titulo="Política de privacidad" nota={<p>Transferencia internacional: Firebase/Google, Netlify, Resend y Cloudinary procesan datos fuera de la Argentina. Pedile al abogado que confirme si hace falta algún mecanismo adicional (Ley 25.326, art. 12) y que revise la inscripción de la base de datos en el Registro Nacional de Bases de Datos de la AAIP.</p>}>

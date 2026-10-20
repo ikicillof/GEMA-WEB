@@ -1,13 +1,14 @@
 'use client'
 
-import dynamic from 'next/dynamic'
+import { cargaDiferida } from './carga-diferida'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { invalidateSafe as invalidate } from '@/lib/safe-invalidate'
 import { useEffect, useRef, useState } from 'react'
 import type { MutableRefObject } from 'react'
 import type { RoomProgress } from './room-scene'
-import { PARADE_TIMING } from './journey-scene'
+import { PARADE_TIMING } from './journey-timing'
+import { EscenaSegura } from './escena-segura'
 import { PrinterStage } from './printer-journey'
 import type { PrinterApi } from './printer-journey'
 import { DEFAULT_DOG_COLOR, PJ } from '@/lib/printer-timeline'
@@ -15,10 +16,10 @@ import { easeInOutSine, getLenis } from './smooth-scroll'
 import { Squiggles, drawSquiggles } from './squiggles'
 import type { Spec } from './squiggles'
 
-const JourneyScene = dynamic(() => import('./journey-scene'), { ssr: false })
-const RoomScene = dynamic(() => import('./room-scene'), { ssr: false })
+const JourneyScene = cargaDiferida(() => import('./journey-scene'))
+const RoomScene = cargaDiferida(() => import('./room-scene'))
 // La misma puerta 3D del hero (el modelo ya está cargado y cacheado), para la salida de la sección 4.
-const DoorScene = dynamic(() => import('./hero-door-scene'), { ssr: false })
+const DoorScene = cargaDiferida(() => import('./hero-door-scene'))
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v))
 const ease = (t: number) => t * t * (3 - 2 * t)
@@ -61,12 +62,12 @@ export function HomeJourney() {
   const printerRef = useRef<HTMLElement>(null)
   const printerApi = useRef<PrinterApi>(null)
   const dogColor = useRef(DEFAULT_DOG_COLOR) // color del Perro Globo que se elige en la impresora (sección 2); el cuarto de la sección 3 lo usa
-  const textRef = useRef<HTMLParagraphElement>(null)
+  const textRef = useRef<HTMLHeadingElement>(null)
   const canvasRef = useRef<HTMLDivElement>(null)
   const paradePaths = useRef<(SVGPathElement | null)[]>([])
   const progress = useRef(0)
   const rinconRef = useRef<HTMLElement>(null)
-  const rinconTextRef = useRef<HTMLParagraphElement>(null)
+  const rinconTextRef = useRef<HTMLHeadingElement>(null)
   const rinconPaths = useRef<(SVGPathElement | null)[]>([])
   const roomProgress = useRef<RoomProgress>({ rincon: 0, enter: 0, exit: 0 })
   // Cada escena 3D a pantalla completa existe solo cerca de su sección (una pantalla antes y una después) y se destruye al alejarse:
@@ -292,9 +293,9 @@ export function HomeJourney() {
   return <div className="recorrido">
     <section ref={paradeRef} className="journey journey--parade" aria-label="Objetos de Gemma">
       <div className="journey-sticky">
-        {mode && paradeReady && <div ref={canvasRef} className="journey-canvas" style={{ visibility: 'hidden' }}><JourneyScene progress={progress} narrow={mode.narrow} reduced={mode.reduced} /></div>}
+        {mode && paradeReady && <div ref={canvasRef} className="journey-canvas" style={{ visibility: 'hidden' }}><EscenaSegura><JourneyScene progress={progress} narrow={mode.narrow} reduced={mode.reduced} /></EscenaSegura></div>}
         <Squiggles specs={PARADE_SPECS} size={size} paths={paradePaths} />
-        <p ref={textRef} className="journey-text">Cada pieza nace de una idea, <em>una capa a la vez.</em></p>
+        <h2 ref={textRef} className="journey-text">Cada pieza nace de una idea, <em>una capa a la vez.</em></h2>
       </div>
     </section>
     <section ref={printerRef} className="journey journey--printer" aria-label="Cómo nace una pieza de Gemma">
@@ -302,16 +303,16 @@ export function HomeJourney() {
     </section>
     <section ref={rinconRef} className="journey journey--rincon" aria-label="El rincón se enciende">
       <div className="journey-sticky">
-        {mode && roomReady && <div className="journey-canvas room-canvas"><RoomScene progress={roomProgress} narrow={mode.narrow} reduced={mode.reduced} dogColor={dogColor} /></div>}
+        {mode && roomReady && <div className="journey-canvas room-canvas"><EscenaSegura><RoomScene progress={roomProgress} narrow={mode.narrow} reduced={mode.reduced} dogColor={dogColor} /></EscenaSegura></div>}
         <Squiggles specs={RINCON_SPECS} size={size} paths={rinconPaths} />
-        <p ref={rinconTextRef} className="journey-text journey-text--rincon">Ahora sí <em>quedó lindo.</em></p>
+        <h2 ref={rinconTextRef} className="journey-text journey-text--rincon">Ahora sí <em>quedó lindo.</em></h2>
       </div>
     </section>
     <section ref={doorRef} className="journey journey--door" aria-label="Salir por la puerta">
       <div className="journey-sticky">
         {/* La misma puerta corrediza 3D del hero, abierta y con la luz cálida detrás. La caja .exit-door marca dónde va
             (la escena la mide para ubicarla) y es el destino de Gemi fijo. */}
-        {mode && doorReady && <div className="exit-door3d" aria-hidden="true"><DoorScene progress={exitDoor} anchor={doorFrameRef} narrow={mode.narrow} /></div>}
+        {mode && doorReady && <div className="exit-door3d" aria-hidden="true"><EscenaSegura><DoorScene progress={exitDoor} anchor={doorFrameRef} narrow={mode.narrow} /></EscenaSegura></div>}
         <div className="exit-scene"><div ref={doorFrameRef} className="exit-door" /></div>
         <div ref={washRef} className="exit-wash" aria-hidden="true" />
       </div>

@@ -1,16 +1,17 @@
 'use client'
 
+import { cargaDiferida } from './carga-diferida'
 import Image from 'next/image'
-import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { invalidateSafe as invalidate } from '@/lib/safe-invalidate'
 import { useEffect, useRef, useState } from 'react'
 import type { HeroDoorProgress } from './hero-door-scene'
+import { EscenaSegura } from './escena-segura'
 
 // Puerta corrediza 3D del hero (lo primero que se ve: se carga apenas monta la página).
-const HeroDoorScene = dynamic(() => import('./hero-door-scene'), { ssr: false })
+const HeroDoorScene = cargaDiferida(() => import('./hero-door-scene'))
 
 export function GemmaExperience() {
   const stageRef = useRef<HTMLElement>(null)
@@ -19,6 +20,14 @@ export function GemmaExperience() {
   const gemiRef = useRef<HTMLDivElement>(null)
   const doorProgress = useRef<HeroDoorProgress>({ open: 0, dolly: 0 })
   const [narrow, setNarrow] = useState<boolean | null>(null)
+  // El 3D (three.js) se descarga recién cuando el navegador está libre, para que el texto, el logo y los botones aparezcan primero.
+  const [escena3d, setEscena3d] = useState(false)
+  useEffect(() => {
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void }
+    if (w.requestIdleCallback) { const id = w.requestIdleCallback(() => setEscena3d(true), { timeout: 2000 }); return () => w.cancelIdleCallback?.(id) }
+    const t = window.setTimeout(() => setEscena3d(true), 800)
+    return () => window.clearTimeout(t)
+  }, [])
 
   useEffect(() => {
     const stage = stageRef.current
@@ -77,13 +86,14 @@ export function GemmaExperience() {
 
   return <section ref={stageRef} className="portal-stage portal-stage--flat">
     <div className="portal-sticky"><div className="portal-lightwash" aria-hidden="true" />
-      {narrow !== null && <div className="portal-door3d" aria-hidden="true"><HeroDoorScene progress={doorProgress} anchor={artRef} narrow={narrow} /></div>}
+      {narrow !== null && escena3d && <div className="portal-door3d" aria-hidden="true"><EscenaSegura><HeroDoorScene progress={doorProgress} anchor={artRef} narrow={narrow} /></EscenaSegura></div>}
       <div className="portal-content hero" ref={contentRef}>
         <div className="shell portal-hero-grid">
           <div className="portal-copy">
             <p className="hero-kicker"><span /> Objetos con personalidad</p>
             <Image className="portal-logo" src="/productos/logo-transparent.png" alt="Gemma" width={466} height={275} priority />
-            <p className="portal-tagline">Hacemos que cada rincón <em>brille.</em></p>
+            {/* El único h1 del home: está en el HTML del servidor (no depende del 3D). */}
+            <h1 className="portal-tagline">Hacemos que cada rincón <em>brille.</em></h1>
             <p className="hero-lead">Diseños impresos en 3D, hechos a pedido y llenos de color. Para que tu casa se sienta un poquito más vos.</p>
             <div className="hero-actions"><Link href="/tienda" className="button button--pink">Ver la tienda <span aria-hidden="true">→</span></Link><a href="#quienes-somos" className="button button--outline">Conocer Gemma</a></div>
           </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import dynamic from 'next/dynamic'
+import { cargaDiferida } from './carga-diferida'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { invalidateSafe as invalidate } from '@/lib/safe-invalidate'
@@ -14,7 +14,7 @@ import type { Spec } from './squiggles'
 // Sección 2 del home: la impresora 3D. Este componente es el contenido fijo de la sección (escena, firuletes, textos y menú
 // de colores); el home le da el progreso (paint) desde su propio ScrollTrigger y maneja el snap de todo el recorrido.
 // La escena 3D se descarga recién cuando la sección está por entrar en pantalla.
-const PrinterScene = dynamic(() => import('./printer-scene'), { ssr: false })
+const PrinterScene = cargaDiferida(() => import('./printer-scene'))
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v))
 // Firuletes en los bordes: no cruzan el texto (izquierda, al medio) ni el centro-derecha, donde está la impresora.

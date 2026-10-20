@@ -14,11 +14,22 @@ import { AuthProvider } from '@/components/auth-provider'
 import { LoginModal } from '@/components/login-modal'
 import { AvisoNovedades } from '@/components/aviso-novedades'
 import { CursorTrail } from '@/components/cursor-trail'
+import { MARCA, urlDelSitio } from '@/lib/seo'
 
 const poppins = Poppins({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-poppins', display: 'swap' })
 
-export const metadata: Metadata = { title: 'Gemma — Hacemos que cada rincón brille', description: 'Objetos de diseño impresos en 3D para hacer que cada rincón se sienta más hogar.' }
+// Valores por defecto para todo el sitio; cada página los afina con metaPagina() (lib/seo.ts). metadataBase sale de SITE_URL.
+// El canonical './' hace que cada página tenga como canonical su propia dirección.
+export const metadata: Metadata = {
+  metadataBase: new URL(urlDelSitio()),
+  applicationName: MARCA.nombre,
+  title: { default: `${MARCA.nombre} | ${MARCA.lema}`, template: '%s | Gemma' },
+  description: MARCA.descripcion,
+  alternates: { canonical: './' },
+  openGraph: { type: 'website', locale: 'es_AR', siteName: MARCA.nombre, title: `${MARCA.nombre} | ${MARCA.lema}`, description: MARCA.descripcion, images: [{ url: '/og-gemma.png', width: 1200, height: 630, alt: `${MARCA.nombre}: ${MARCA.lema.toLowerCase()}` }] },
+  twitter: { card: 'summary_large_image', title: `${MARCA.nombre} | ${MARCA.lema}`, description: MARCA.descripcion, images: ['/og-gemma.png'] },
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return <html lang="es"><body className={poppins.variable}><AuthProvider><CartProvider><SmoothScroll /><InitialLoader /><PageTransition /><SiteHeader /><main>{children}</main><SiteFooter /><CartDrawer /><GemiGlobal /><GemmaMotion /><CursorTrail /><LoginModal /><AvisoNovedades /></CartProvider></AuthProvider></body></html>
+  return <html lang="es-AR"><body className={poppins.variable}><AuthProvider><CartProvider><SmoothScroll /><InitialLoader /><PageTransition /><SiteHeader /><main>{children}</main><SiteFooter /><CartDrawer /><GemiGlobal /><GemmaMotion /><CursorTrail /><LoginModal /><AvisoNovedades /></CartProvider></AuthProvider></body></html>
 }

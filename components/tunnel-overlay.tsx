@@ -1,12 +1,12 @@
 'use client'
 
-import dynamic from 'next/dynamic'
+import { cargaDiferida } from './carga-diferida'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getTunnelAtlas } from '@/lib/tunnel-assets'
 import type { ExitTint } from './tunnel-scene'
 
 // El código del túnel ya se precargó en segundo plano (lib/tunnel-assets), así que acá carga al instante.
-const TunnelScene = dynamic(() => import('./tunnel-scene'), { ssr: false })
+const TunnelScene = cargaDiferida(() => import('./tunnel-scene'))
 
 export type TunnelVersion = 'full' | 'quick'
 // Completa (con fotos de productos): 1,8 s; rápida (sin fotos y con menos discos): 1 s. Después, la luz se funde con la página.

@@ -16,6 +16,8 @@ export const VENDEDORA = {
   domicilio: '[DOMICILIO]',
   emailContacto: '[EMAIL DE CONTACTO]',
   sitio: 'gemma-oficial.com.ar',
+  // Perfil de Instagram de la MARCA (https://www.instagram.com/…), para los datos estructurados del home (SEO). Mientras sea un marcador no se publica.
+  instagram: '[URL DE INSTAGRAM DE LA MARCA]',
   // Registro Nacional de Bases de Datos Personales (Agencia de Acceso a la Información Pública, Ley 25.326).
   registroAAIP: '[N.º DE INSCRIPCIÓN EN EL REGISTRO NACIONAL DE BASES DE DATOS]',
 } as const

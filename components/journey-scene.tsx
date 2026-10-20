@@ -18,9 +18,10 @@ const MODELS = [
   { url: '/modelos/gemi.glb', half: 0.99 },
   { url: '/modelos/giallo-luma.glb', half: 0.91 },
 ]
-const WINDOW = 0.7, STAGGER = 0.15, HEAD_START = 0.08 // el primero ya viene entrando apenas empieza el scroll
+import { PARADE_TIMING } from './journey-timing'
+const { WINDOW, STAGGER, HEAD_START } = PARADE_TIMING
 // Para el snap: la línea de tiempo del desfile (el objeto i recorre la pantalla con t = (p - i·STAGGER) / WINDOW + HEAD_START).
-export const PARADE_TIMING = { WINDOW, STAGGER, HEAD_START }
+export { PARADE_TIMING } from './journey-timing'
 
 function shadowTexture() {
   const c = document.createElement('canvas'); c.width = c.height = 128

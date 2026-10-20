@@ -7,5 +7,6 @@ const securityHeaders = [
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
 ]
-const nextConfig = { images: { unoptimized: true }, async headers() { return [{ source: '/:path*', headers: securityHeaders }] } }
+// Imágenes optimizadas (formato moderno y tamaño según el dispositivo) por el CDN de imágenes de Netlify. Las fotos de productos vienen de Cloudinary o de /public.
+const nextConfig = { images: { formats: ['image/avif', 'image/webp'], remotePatterns: [{ protocol: 'https', hostname: 'res.cloudinary.com' }] }, async headers() { return [{ source: '/:path*', headers: securityHeaders }] } }
 export default nextConfig

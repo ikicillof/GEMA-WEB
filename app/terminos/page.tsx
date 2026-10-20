@@ -1,9 +1,9 @@
-import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Dato, EmailContacto, LegalLayout } from '@/components/legal'
 import { CONDICIONES, VENDEDORA } from '@/lib/vendedora'
+import { metaPagina } from '@/lib/seo'
 
-export const metadata: Metadata = { title: 'Términos y condiciones — Gemma', description: 'Cómo comprar en Gemma: precios, formas de pago, envíos, cambios y devoluciones, arrepentimiento y jurisdicción.' }
+export const metadata = metaPagina({ titulo: 'Términos y condiciones', descripcion: 'Cómo comprar en Gemma: precios, formas de pago, envíos, cambios y devoluciones, arrepentimiento y jurisdicción.', ruta: '/terminos' })
 
 export default function TerminosPage() {
   return <LegalLayout kicker="Legales" titulo="Términos y condiciones">
