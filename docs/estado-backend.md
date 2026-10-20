@@ -94,7 +94,37 @@ Fotos: el navegador pide una firma a `POST /api/admin/uploads/firma` (carpeta y 
 - El test cubre un lote; el envío de varios lotes seguidos (más de 100 suscriptos) no se probó con mails reales.
 - Las funciones de fondo y programadas de Netlify no se pueden probar con `next dev`; se prueban en el deploy.
 
+## Páginas legales y botón de arrepentimiento
+
+**Son modelos.** Cada página lleva una «Nota interna» (caja violeta punteada) que **solo ve quien entró como admin o creador**: se arma en el navegador con la sesión y no sale en el HTML público. Dice que el texto es un modelo a revisar por un contador o abogado y lista los datos que faltan. Hay que revisarlos antes de publicar en producción.
+
+| Página | Qué tiene |
+|---|---|
+| `/terminos` | Quién vende, cómo se compra, precios en pesos, pago (Mercado Pago y transferencia con descuento), productos hechos a pedido y su demora, envíos por Correo Argentino, cambios y devoluciones, botón de arrepentimiento y jurisdicción. |
+| `/privacidad` | Datos que se guardan y para qué, con quién se comparten (Firebase, Mercado Pago, Correo Argentino, Resend, Cloudinary), mails de novedades y baja, y cómo pedir que se borren (Ley 25.326). |
+| `/devoluciones` | Plazos y condiciones con marcadores; aclara que elegir un color de la paleta no vuelve «personalizado» a un producto (art. 1116 inc. c CCyC). |
+| `/arrepentimiento` | Formulario público (pedido, nombre, email, motivo opcional). Sin cuenta. |
+
+**Datos de la vendedora: un solo archivo, `lib/vendedora.ts`.** Lo que está entre corchetes (`[RAZÓN SOCIAL]`, `[CUIT]`, `[CONDICIÓN FISCAL]`, `[DOMICILIO]`, `[EMAIL DE CONTACTO]` y los plazos y condiciones de `CONDICIONES`) se ve resaltado en amarillo en las páginas y el footer hasta que se reemplace. La nota interna cuenta cuántos faltan. El QR de Data Fiscal se completa en `DATA_FISCAL` (`qrImagen` y `qrUrl`); mientras tanto el footer muestra un espacio reservado.
+
+**Footer y checkout.** El footer (todas las páginas) tiene los links a las cuatro páginas, razón social, CUIT y domicilio, el espacio del QR y el «Botón de arrepentimiento» siempre visible (Res. 424/2020). El checkout dice «Al comprar aceptás los términos y condiciones» con el link, arriba de los botones de pago.
+
+**Cómo funciona el arrepentimiento.**
+- `POST /api/arrepentimiento` (público, `lib/server/arrepentimiento.ts`): límite de 5 por IP cada 10 minutos, validación estricta, campo trampa para bots (si viene completo responde bien pero no guarda ni manda nada) y no revela si el pedido existe.
+- Guarda `arrepentimientos/{ARR-aaaammdd-XXXXXX}` (solo servidor; las reglas de Firestore niegan todo lo demás) con `estado` (`recibido`, `en_gestion`, `resuelto`), si el pedido existe y si el email coincide con el del pedido.
+- Manda dos mails con Resend: a `configuracion/general.emailAvisos` (con aviso si el pedido no existe o el email no coincide; «Responder» le escribe a la persona) y a la persona, con el n.º de trámite. Un fallo no pierde la solicitud: queda `mailsPendientes` y se reintenta desde el panel. Pasadas 30 solicitudes en un día se siguen guardando pero no se mandan mails automáticos (evita que el spam agote el cupo de Resend).
+- Panel `/admin/arrepentimientos`: lista con buscador y filtro de estado, avisos de pedido o email que no coinciden, cambio de estado y «Reintentar mails». Ver: colaborador con `ventas:ver`. Cambiar estado y reintentar: admin o creador (queda en `auditoria`).
+
+**Cómo se probó (20/10, build + `next start`).** Datos inválidos → 400; campo desconocido → 400; campo trampa → 201 sin guardar; sin sesión las rutas del panel dan 401; la nota interna no está en el HTML público; el footer enlaza a `/arrepentimiento`; el límite por IP responde 429 a partir de la sexta llamada seguida. **No se hizo una solicitud real de punta a punta** (guardaría un documento en el Firestore compartido y mandaría 2 mails): probarla desde `/arrepentimiento` con un pedido de prueba y ver que aparezca en el panel.
+
+**Límites conocidos:**
+- Los plazos, la condición fiscal y el criterio de productos personalizados son marcadores: **el texto no está listo para publicar** hasta completarlos y que lo revise un profesional.
+- Quien se arrepiente no necesita estar logueada, así que la identidad se valida a mano con los avisos «No encontramos ese pedido» / «El email no coincide».
+- Todavía no hay reembolso automático: la gestión de la devolución y del reintegro es manual.
+
 ## Pendiente
+
+0. **Completar `lib/vendedora.ts`** (razón social, CUIT, condición fiscal, domicilio, email de contacto, plazos y condiciones de cambios, criterio para personalizados, QR de Data Fiscal), hacer revisar las páginas legales y probar una solicitud real en `/arrepentimiento`.
 
 1. Cargar `MERCADOPAGO_WEBHOOK_SECRET` y redeployar (commit vacío o «Clear cache and deploy»).
 2. Probar un pago real de prueba de punta a punta: pagar en Mercado Pago, volver a `/checkout/resultado` y ver el webhook marcando `pagado`. Hasta ahora el flujo se probó solo con un Mercado Pago simulado; nunca contra la API real ni con los avisos reales.
