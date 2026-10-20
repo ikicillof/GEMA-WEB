@@ -1,23 +1,12 @@
 import { Link, Text } from '@react-email/components'
 import { C, Layout, estilos } from './layout'
+import type { DatosArrepentimientoDuena } from './arrepentimiento-tipos'
 
-export type DatosArrepentimiento = {
-  tramite: string
-  pedido: string
-  nombre: string
-  email: string
-  motivo: string
-  fecha: string
-  pedidoEncontrado: boolean
-  emailCoincide: boolean
-  urlPanel: string
-  urlDevoluciones: string
-}
-
-/** A la dueña: alguien usó el botón de arrepentimiento. */
-export default function ArrepentimientoDuena({ d }: { d: DatosArrepentimiento }) {
+/** A la dueña: alguien usó el botón de arrepentimiento. Lleva los datos internos para gestionarlo. */
+export default function ArrepentimientoDuena({ d }: { d: DatosArrepentimientoDuena }) {
   const dato = { ...estilos.parrafo, margin: '0 0 4px' }
   return <Layout vista={`Arrepentimiento ${d.tramite}: pedido ${d.pedido}`}>
+    {d.prueba && <Text style={{ ...estilos.parrafo, backgroundColor: '#FFD93D', borderRadius: '12px', padding: '8px 12px', fontSize: '13px', fontWeight: 600 }}>[PRUEBA] Solicitud sobre una venta de prueba.</Text>}
     <Text style={estilos.titulo}>Nueva solicitud de arrepentimiento</Text>
     <Text style={estilos.parrafo}>{d.nombre} pidió arrepentirse de una compra. Tenés que contestarle por email con las instrucciones de la devolución.</Text>
     <Text style={estilos.etiqueta}>Trámite</Text>

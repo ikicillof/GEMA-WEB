@@ -27,6 +27,8 @@ export const CONDICIONES = {
   plazoCambios: '[PLAZO PARA CAMBIOS]',
   condicionesCambios: '[CONDICIONES DE CAMBIO]',
   plazoReintegro: '[PLAZO DE REINTEGRO]',
+  // Cuánto tardamos en contactar a quien usó el botón de arrepentimiento (va en el mail de constancia).
+  plazoRespuestaArrepentimiento: '[PLAZO DE RESPUESTA AL ARREPENTIMIENTO]',
   plazoReclamoDanos: '[PLAZO PARA RECLAMAR POR DAÑOS EN EL ENVÍO]',
   criterioPersonalizados: '[CRITERIO PARA PRODUCTOS PERSONALIZADOS]',
 } as const

@@ -47,12 +47,13 @@ function Arrepentimientos() {
     setLista(l => l && l.map(x => x.tramite === s.tramite ? { ...x, estado } : x))
   }
 
-  async function reintentar(s: ArrepentimientoResumen) {
-    setOcupada(s.tramite)
-    const r = await api<{ reintentados: number; mailsPendientes: boolean }>(`/api/admin/arrepentimientos/${encodeURIComponent(s.tramite)}`, { method: 'POST', body: '{}' })
+  async function reintentar(s: ArrepentimientoResumen, cual: 'cliente' | 'duena') {
+    setOcupada(`${s.tramite}:${cual}`)
+    const r = await api<{ estado: string; error: string | null }>(`/api/admin/arrepentimientos/${encodeURIComponent(s.tramite)}`, { method: 'POST', body: JSON.stringify({ cual }) })
     setOcupada(null)
-    if (!r.ok) { avisar(r.cuerpo.error || 'No pudimos reintentar los mails.', true); return }
-    avisar(r.cuerpo.mailsPendientes ? 'Algún mail sigue fallando. Revisá el email de avisos y Resend.' : 'Listo: se enviaron los mails.', r.cuerpo.mailsPendientes)
+    if (!r.ok) { avisar(r.cuerpo.error || 'No pudimos reintentar el mail.', true); await cargar(); return }
+    const ok = r.cuerpo.estado === 'enviado'
+    avisar(ok ? `Listo: se envió el mail ${cual === 'cliente' ? 'al cliente' : 'a la dueña'}.` : `El mail ${cual === 'cliente' ? 'al cliente' : 'a la dueña'} sigue fallando: ${r.cuerpo.error ?? 'revisá Resend'}.`, !ok)
     await cargar()
   }
 
@@ -61,7 +62,7 @@ function Arrepentimientos() {
 
     {error && <Aviso tipo="error">{error}</Aviso>}
     {nuevas > 0 && <Aviso tipo="info"><b>{nuevas === 1 ? '1 solicitud nueva' : `${nuevas} solicitudes nuevas`}</b> sin gestionar.</Aviso>}
-    {conMails > 0 && <Aviso><b>{conMails === 1 ? '1 solicitud tiene mails sin enviar' : `${conMails} solicitudes tienen mails sin enviar`}.</b> Usá «Reintentar mails» en cada una (están marcadas).</Aviso>}
+    {conMails > 0 && <Aviso><b>{conMails === 1 ? '1 solicitud tiene mails sin enviar' : `${conMails} solicitudes tienen mails sin enviar`}.</b> Reintentá cada mail por separado con «Reintentar este mail».</Aviso>}
 
     <div className="adm-toolbar">
       <input className="adm-input" type="search" inputMode="search" placeholder="Buscar por trámite, pedido, nombre o email" aria-label="Buscar solicitudes" value={q} onChange={e => setQ(e.target.value)} />
@@ -86,16 +87,21 @@ function Arrepentimientos() {
               {!s.pedidoEncontrado && <span className="adm-chip adm-chip--malo"><ShieldAlert size={12} aria-hidden="true" />No encontramos ese pedido</span>}
               {s.pedidoEncontrado && !s.emailCoincide && <span className="adm-chip adm-chip--malo"><ShieldAlert size={12} aria-hidden="true" />El email no coincide con el pedido</span>}
               {s.pedidoEncontrado && s.emailCoincide && <span className="adm-chip adm-chip--ok">Pedido y email verificados</span>}
-              {s.mailsPendientes && <span className="adm-chip adm-chip--espera"><Mail size={12} aria-hidden="true" />Mails sin enviar</span>}
+              {s.modoPrueba && <span className="adm-chip adm-chip--prueba">Prueba</span>}
             </div>
             {s.motivo && <p className="adm-sub" style={{ margin: 0, whiteSpace: 'pre-wrap' }}>Motivo: {s.motivo}</p>}
+            {([['cliente', 'Mail al cliente', s.mailCliente], ['duena', 'Mail a la dueña', s.mailDuena]] as const).map(([cual, titulo, m]) => <div key={cual} className="adm-fila-meta">
+              <span>{titulo}:</span>
+              <span className={`adm-chip ${m.estado === 'enviado' ? 'adm-chip--ok' : m.estado === 'error' ? 'adm-chip--malo' : 'adm-chip--espera'}`}>{m.estado === 'enviado' ? 'Enviado' : m.estado === 'error' ? 'Con error' : 'Pendiente'}{m.intentos > 1 ? ` · ${m.intentos} intentos` : ''}</span>
+              {m.error && <span>{m.error}</span>}
+              {puede('admin') && m.estado !== 'enviado' && <button type="button" className="button button--pink adm-btn" disabled={ocupada !== null} onClick={() => void reintentar(s, cual)}><Mail size={16} aria-hidden="true" />{ocupada === `${s.tramite}:${cual}` ? 'Un momento…' : 'Reintentar este mail'}</button>}
+            </div>)}
             {puede('admin') && <div className="adm-actions">
               <label className="adm-campo"><span>Estado</span>
-                <select className="adm-select" value={s.estado} disabled={ocupada === s.tramite} onChange={e => void cambiarEstado(s, e.target.value as Estado)}>
+                <select className="adm-select" value={s.estado} disabled={ocupada !== null} onChange={e => void cambiarEstado(s, e.target.value as Estado)}>
                   {ESTADOS.map(e => <option key={e.valor} value={e.valor}>{e.texto}</option>)}
                 </select>
               </label>
-              {s.mailsPendientes && <button type="button" className="button button--pink adm-btn" disabled={ocupada === s.tramite} onClick={() => void reintentar(s)}><Mail size={16} aria-hidden="true" />{ocupada === s.tramite ? 'Un momento…' : 'Reintentar mails'}</button>}
             </div>}
           </li>
         })}</ul>}
