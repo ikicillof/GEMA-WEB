@@ -8,7 +8,7 @@ import TransferenciaCompletada from '@/emails/transferencia-completada'
 import type { DatosMail } from '@/emails/tipos'
 
 export type TipoMail = 'nueva_venta_duena' | 'confirmacion_cliente' | 'transferencia_completada'
-const EMAIL_VALIDO = /^[^s@<>]+@[^s@<>]+.[^s@<>]+$/
+const EMAIL_VALIDO = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/
 export const pesos = (n: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n)
 
 export type MailArmado = { para: string; asunto: string; reply?: string; react: ReactElement }
