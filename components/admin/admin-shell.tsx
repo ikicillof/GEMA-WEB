@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { Megaphone, Package, Receipt, Settings, Users } from 'lucide-react'
+import { Megaphone, Package, Receipt, Settings, Undo2, Users } from 'lucide-react'
 import { useAuth } from '@/components/auth-provider'
 import { CargaGemma } from '@/components/carga-gemma'
 import { NotFoundExperience } from '@/components/not-found-experience'
@@ -37,6 +37,7 @@ const permitido = (yo: Yo, min: Rol, permiso?: Permiso) =>
 const PESTANAS = [
   { href: '/admin/ventas', texto: 'Ventas', Icono: Receipt, min: 'colaborador' as Rol, permiso: 'ventas:ver' as Permiso },
   { href: '/admin/productos', texto: 'Productos', Icono: Package, min: 'colaborador' as Rol, permiso: 'productos:ver' as Permiso },
+  { href: '/admin/arrepentimientos', texto: 'Arrepentimientos', Icono: Undo2, min: 'colaborador' as Rol, permiso: 'ventas:ver' as Permiso },
   { href: '/admin/novedades', texto: 'Novedades', Icono: Megaphone, min: 'admin' as Rol },
   { href: '/admin/equipo', texto: 'Equipo', Icono: Users, min: 'admin' as Rol },
   { href: '/admin/configuracion', texto: 'Configuración', Icono: Settings, min: 'admin' as Rol },
