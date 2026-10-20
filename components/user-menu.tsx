@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import { LayoutDashboard, LogOut, ShoppingBag, User } from 'lucide-react'
+import { LayoutDashboard, LogOut, ShoppingBag, User, UserCog } from 'lucide-react'
 import { esStaff } from '@/lib/roles'
 import { useAuth } from './auth-provider'
 
@@ -33,6 +33,7 @@ export function UserMenu() {
     {abierto && <div className="user-dropdown" role="menu">
       <p className="user-dropdown-name">{nombre}</p>
       <Link href="/mis-compras" role="menuitem" onClick={() => setAbierto(false)}><ShoppingBag size={15} /> Mis compras</Link>
+      <Link href="/mi-cuenta" role="menuitem" onClick={() => setAbierto(false)}><UserCog size={15} /> Mi cuenta</Link>
       {/* Solo comodidad: el panel igual verifica el rol en el servidor, quien no es del equipo ve la 404. */}
       {esStaff(sesion.rol) && <Link href="/admin" role="menuitem" onClick={() => setAbierto(false)}><LayoutDashboard size={15} /> Panel</Link>}
       <button type="button" role="menuitem" onClick={() => { setAbierto(false); void cerrarSesion() }}><LogOut size={15} /> Cerrar sesión</button>

@@ -49,20 +49,29 @@ export async function POST(req: Request) {
     // Perfil: se crea una sola vez; después el servidor solo mantiene email y rol al día.
     const ref = adminDb().collection('users').doc(user.uid)
     const nombre = limpiarNombre(cuerpo.nombre || user.displayName || (user.email ?? '').split('@')[0] || 'Cliente') || 'Cliente'
+    const conGoogle = decoded.firebase?.sign_in_provider === 'google.com'
+    // Al registrarse con email la casilla estaba a la vista; con Google, si no la tildó, se le pregunta una vez después.
+    const recibeNovedades = cuerpo.recibeNovedades === true
+    let preguntarNovedades = false
     try {
       await ref.create({
         nombre,
         email: user.email ?? '',
         rol,
-        recibeNovedades: cuerpo.recibeNovedades === true,
+        recibeNovedades,
+        novedadesPreguntadas: !conGoogle || recibeNovedades,
         fechaAlta: FieldValue.serverTimestamp(),
       })
+      preguntarNovedades = conGoogle && !recibeNovedades
     } catch (e) {
       if ((e as { code?: number }).code !== 6) throw e // 6 = ya existe
+      // Una cuenta que ya existe NUNCA cambia lo que eligió: solo se mantienen email y rol al día.
+      const previo = (await ref.get()).data() ?? {}
       await ref.update({ email: user.email ?? '', rol })
+      preguntarNovedades = conGoogle && previo.novedadesPreguntadas !== true && previo.recibeNovedades !== true
     }
 
-    return json({ rol, permisos })
+    return json({ rol, permisos, preguntarNovedades })
   } catch (e) {
     console.error('[auth/sync] error', (e as Error).message)
     return json({ error: 'No pudimos completar el ingreso. Probá de nuevo.' }, 500)

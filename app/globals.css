@@ -873,3 +873,20 @@ body.nf-active .gemi-global { visibility:hidden; }
 .checkout-pay .checkout-hint:first-of-type { margin:0 0 4px; }
 .checkout-pay .auth-ok, .checkout-pay .auth-error { margin-top:12px; }
 @media (max-width:700px) { .checkout-pay .pay-actions { grid-template-columns:1fr; } }
+
+/* Casilla de novedades del login, aviso de «¿Querés enterarte?» y «Mi cuenta» */
+.auth-check--novedades { margin:0 0 6px; }
+.auth-nota { margin:0 0 12px; color:rgba(15,15,16,.7); font-size:11px; line-height:1.45; }
+.novedades-aviso { position:fixed; z-index:150; left:50%; bottom:14px; width:min(440px, calc(100% - 24px)); padding:18px 20px; border:1.5px solid var(--graphite); border-radius:24px; background:var(--cream); color:var(--graphite); box-shadow:0 18px 50px rgba(15,15,16,.28); transform:translateX(-50%); animation:novedades-in .35s ease; }
+.novedades-aviso h2 { margin:0 0 4px; font-size:16px; letter-spacing:-.03em; }
+.novedades-aviso p { margin:0 0 12px; font-size:13px; line-height:1.5; }
+.novedades-aviso .auth-error { margin:0 0 10px; }
+.novedades-aviso-botones { display:flex; flex-wrap:wrap; gap:10px; }
+.novedades-aviso-botones .button { flex:1 1 140px; min-height:44px; }
+.button--secundario { border:1.5px solid var(--graphite); background:transparent; color:var(--graphite); }
+.button--secundario:hover { background:var(--blush); }
+.button:disabled { opacity:.6; cursor:wait; transform:none; }
+@keyframes novedades-in { from { opacity:0; transform:translate(-50%,16px); } to { opacity:1; transform:translate(-50%,0); } }
+@media (prefers-reduced-motion: reduce) { .novedades-aviso { animation:none; } }
+.cuenta-datos { display:grid; gap:4px; margin:0 0 18px; font-size:14px; }
+.cuenta-datos b { font-size:12px; letter-spacing:.04em; text-transform:uppercase; color:var(--violet); }

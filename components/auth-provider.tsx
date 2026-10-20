@@ -23,7 +23,11 @@ type AuthContext = {
   llamar: (url: string, init?: RequestInit) => Promise<Response>
   cerrarLogin: () => void
   setModo: (modo: ModoLogin) => void
-  ingresarConGoogle: () => Promise<void>
+  /** `recibeNovedades` es la casilla del login: solo cuenta si es la primera vez (el servidor crea el perfil con ese valor). */
+  ingresarConGoogle: (recibeNovedades: boolean) => Promise<void>
+  /** El servidor dice que a esta persona (entró con Google sin tildar la casilla) todavía no se le preguntó por las novedades. */
+  preguntaNovedades: boolean
+  responderNovedades: (recibe: boolean) => Promise<void>
   ingresarConEmail: (email: string, password: string) => Promise<void>
   registrar: (datos: { nombre: string; email: string; password: string; recibeNovedades: boolean }) => Promise<void>
   reenviarVerificacion: (email: string, password: string) => Promise<void>
@@ -59,7 +63,7 @@ function traducir(e: unknown): ErrorAuth {
 const requiereVerificar = (u: User) =>
   !u.emailVerified && u.providerData.length > 0 && u.providerData.every(p => p.providerId === 'password')
 
-async function sincronizar(user: User, cuerpo?: { nombre?: string; recibeNovedades?: boolean }) {
+async function sincronizar(user: User, cuerpo?: { nombre?: string; recibeNovedades?: boolean }): Promise<{ preguntarNovedades: boolean }> {
   const token = await user.getIdToken()
   const res = await fetch('/api/auth/sync', {
     method: 'POST',
@@ -67,6 +71,8 @@ async function sincronizar(user: User, cuerpo?: { nombre?: string; recibeNovedad
     body: cuerpo ? JSON.stringify(cuerpo) : undefined,
   })
   if (!res.ok) throw new Error(`sync ${res.status}`)
+  const datos = await res.json().catch(() => ({}))
+  return { preguntarNovedades: datos?.preguntarNovedades === true }
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -74,15 +80,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [cargando, setCargando] = useState(true)
   const [modalAbierto, setModalAbierto] = useState(false)
   const [modo, setModo] = useState<ModoLogin>('ingresar')
+  const [preguntaNovedades, setPreguntaNovedades] = useState(false)
+  // Lo que se eligió en la casilla del login justo antes de abrir Google; se manda una sola vez al sincronizar.
+  const eleccionGoogle = useRef<boolean | null>(null)
   const router = useRouter()
   // A dónde seguir después de ingresar (ej. el checkout). Sobrevive a un recargo de página.
   const destino = useRef<string | null>(null)
 
   useEffect(() => onAuthStateChanged(auth, async user => {
     // Mientras no verifique su email, la cuenta no cuenta como sesión iniciada.
-    if (!user || requiereVerificar(user)) { setSesion(null); setCargando(false); return }
+    if (!user || requiereVerificar(user)) { setSesion(null); setPreguntaNovedades(false); setCargando(false); return }
     try {
-      await sincronizar(user)
+      const eleccion = eleccionGoogle.current
+      eleccionGoogle.current = null
+      const { preguntarNovedades } = await sincronizar(user, eleccion === null ? undefined : { recibeNovedades: eleccion })
+      setPreguntaNovedades(preguntarNovedades)
       // Renueva el token para recibir el rol que el servidor acaba de dejar en los claims.
       const { claims } = await user.getIdTokenResult(true)
       const rol: Rol = esRol(claims.rol) ? claims.rol : 'cliente'
@@ -116,11 +128,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [userActual])
   const cerrarLogin = useCallback(() => setModalAbierto(false), [])
 
-  const ingresarConGoogle = useCallback(async () => {
+  const ingresarConGoogle = useCallback(async (recibeNovedades: boolean) => {
+    eleccionGoogle.current = recibeNovedades
     try {
       await signInWithPopup(auth, new GoogleAuthProvider())
       setModalAbierto(false)
     } catch (e) {
+      eleccionGoogle.current = null
       const codigo = (e as { code?: string }).code
       if (codigo === 'auth/popup-closed-by-user' || codigo === 'auth/cancelled-popup-request') return
       throw traducir(e)
@@ -176,10 +190,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const cerrarSesion = useCallback(async () => { await signOut(auth) }, [])
 
+  /** Cualquier respuesta (sí o no) queda guardada en el perfil desde el servidor: no se vuelve a preguntar. */
+  const responderNovedades = useCallback(async (recibe: boolean) => {
+    const r = await llamar('/api/cuenta/novedades', { method: 'POST', body: JSON.stringify({ recibe }) })
+    if (!r.ok) throw new Error('No pudimos guardar tu respuesta')
+    setPreguntaNovedades(false)
+  }, [llamar])
+
   const valor = useMemo<AuthContext>(() => ({
     sesion, cargando, modalAbierto, modo, abrirLogin, llamar, cerrarLogin, setModo, ingresarConGoogle, ingresarConEmail,
-    registrar, reenviarVerificacion, recuperarPassword, cerrarSesion,
-  }), [sesion, cargando, modalAbierto, modo, abrirLogin, llamar, cerrarLogin, ingresarConGoogle, ingresarConEmail, registrar, reenviarVerificacion, recuperarPassword, cerrarSesion])
+    registrar, reenviarVerificacion, recuperarPassword, cerrarSesion, preguntaNovedades, responderNovedades,
+  }), [sesion, cargando, modalAbierto, modo, abrirLogin, llamar, cerrarLogin, ingresarConGoogle, ingresarConEmail, registrar, reenviarVerificacion, recuperarPassword, cerrarSesion, preguntaNovedades, responderNovedades])
 
   return <Ctx.Provider value={valor}>{children}</Ctx.Provider>
 }

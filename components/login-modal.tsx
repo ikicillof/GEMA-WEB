@@ -29,6 +29,8 @@ export function LoginModal() {
 
   // Al abrir o cambiar de pestaña se limpia el estado de la anterior (el email se conserva).
   useEffect(() => { setError(null); setAviso(null); setPassword(''); setReenviado(false) }, [modo, modalAbierto])
+  // Cada vez que se abre el login la casilla vuelve a estar destildada.
+  useEffect(() => { if (modalAbierto) setNovedades(false) }, [modalAbierto])
 
   useEffect(() => {
     if (!modalAbierto) return
@@ -85,7 +87,10 @@ export function LoginModal() {
         <h2 id="auth-titulo" className="auth-title">{TITULOS[modo].titulo} <GemmaStar size={14} /></h2>
 
         {modo !== 'recuperar' && <>
-          <button type="button" className="auth-google" disabled={enviando} onClick={() => correr(ingresarConGoogle)}>
+          {/* La casilla está arriba de las dos opciones (Google y email): vale para cualquiera de las dos. Siempre destildada al abrir. */}
+          <label className="auth-check auth-check--novedades"><input type="checkbox" checked={novedades} onChange={e => setNovedades(e.target.checked)} /><span>Quiero recibir novedades de Gemma por email</span></label>
+          {modo === 'ingresar' && <p className="auth-nota">Solo cuenta si es tu primera vez en Gemma. Si ya tenés cuenta, lo cambiás en «Mi cuenta».</p>}
+          <button type="button" className="auth-google" disabled={enviando} onClick={() => correr(() => ingresarConGoogle(novedades))}>
             <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.5 17.7 9.5 24 9.5z" /><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z" /><path fill="#FBBC05" d="M10.5 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8l7.9-6.1z" /><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.6-4-13.5-9.7l-7.9 6.1C6.5 42.6 14.6 48 24 48z" /></svg>
             Continuar con Google
           </button>
@@ -96,7 +101,6 @@ export function LoginModal() {
           {modo === 'registro' && <label>Nombre<input type="text" value={nombre} onChange={e => setNombre(e.target.value)} required maxLength={80} autoComplete="name" /></label>}
           <label>Email<input type="email" value={email} onChange={e => setEmail(e.target.value)} required maxLength={254} autoComplete="email" /></label>
           {modo !== 'recuperar' && <label>Contraseña<input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={modo === 'registro' ? 8 : undefined} maxLength={128} autoComplete={modo === 'registro' ? 'new-password' : 'current-password'} />{modo === 'registro' && <small>Al menos 8 caracteres.</small>}</label>}
-          {modo === 'registro' && <label className="auth-check"><input type="checkbox" checked={novedades} onChange={e => setNovedades(e.target.checked)} /><span>Quiero recibir novedades de Gemma por email</span></label>}
 
           {error && <p className="auth-error" role="alert">{error.message}{error.codigo === 'no-verificado' && !reenviado && <> <button type="button" className="auth-link" onClick={() => correr(async () => { await reenviarVerificacion(email, password); setReenviado(true) })}>Reenviar email</button></>}</p>}
           {reenviado && <p className="auth-ok" role="status">Listo, te mandamos otro email de verificación.</p>}
