@@ -17,4 +17,5 @@ export type DatosMail = {
   transferencia?: { alias: string; titular: string; banco: string; provisorio: boolean } | null
   urlWhatsApp: string // comprobante (transferencia) o consulta
   urlMisCompras: string
+  urlTienda: string
 }

@@ -5,9 +5,10 @@ import { Resend } from 'resend'
 import ConfirmacionCliente from '@/emails/confirmacion-cliente'
 import NuevaVentaDuena from '@/emails/nueva-venta-duena'
 import TransferenciaCompletada from '@/emails/transferencia-completada'
+import VentaCancelada from '@/emails/venta-cancelada'
 import type { DatosMail } from '@/emails/tipos'
 
-export type TipoMail = 'nueva_venta_duena' | 'confirmacion_cliente' | 'transferencia_completada'
+export type TipoMail = 'nueva_venta_duena' | 'confirmacion_cliente' | 'transferencia_completada' | 'venta_cancelada'
 const EMAIL_VALIDO = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/
 export const pesos = (n: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n)
 
@@ -24,6 +25,9 @@ export function armar(tipo: TipoMail, d: DatosMail, prueba: boolean, emailAvisos
   if (!EMAIL_VALIDO.test(d.cliente.email)) throw new Error('La venta no tiene un email de cliente válido')
   if (tipo === 'confirmacion_cliente') {
     return { para: d.cliente.email, reply: respuestas, asunto: `${pref}${d.metodoPago === 'transferencia' ? `Recibimos tu pedido ${d.pedidoId}: falta tu transferencia` : `Recibimos tu pago: pedido ${d.pedidoId}`}`, react: ConfirmacionCliente({ d }) }
+  }
+  if (tipo === 'venta_cancelada') {
+    return { para: d.cliente.email, reply: respuestas, asunto: `${pref}Cancelamos tu pedido ${d.pedidoId}`, react: VentaCancelada({ d }) }
   }
   return { para: d.cliente.email, reply: respuestas, asunto: `${pref}Recibimos tu transferencia: pedido ${d.pedidoId}`, react: TransferenciaCompletada({ d }) }
 }

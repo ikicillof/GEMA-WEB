@@ -1,6 +1,7 @@
 import { auditar, cuerpoJson, exigirStaff } from '@/lib/server/admin'
 import { CancelarSchema } from '@/lib/server/admin-schemas'
 import { json } from '@/lib/server/auth'
+import { avisarVentaCancelada } from '@/lib/server/emails'
 import { cancelarVenta } from '@/lib/server/ventas-admin'
 
 export const dynamic = 'force-dynamic'
@@ -17,6 +18,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     if (res === 'no_existe') return json({ error: 'No encontramos esa venta' }, 404)
     if (res === 'estado_invalido') return json({ error: 'Solo se pueden cancelar ventas que todavía no se cobraron' }, 409)
     await auditar(r.staff, 'venta-cancelar', { pedidoId: params.id, motivo: parsed.data.motivo })
+    // Avisa al cliente. Nunca lanza: si Resend falla, queda anotado en la venta (mailsPendientes) y se reintenta desde el panel.
+    await avisarVentaCancelada(params.id)
     return json({ ok: true, estado: 'cancelado' })
   } catch (e) {
     console.error('[admin/cancelar]', (e as Error).message)

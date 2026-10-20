@@ -16,6 +16,7 @@ const MAILS: Record<string, string> = {
   nueva_venta_duena: 'Aviso a la dueña',
   confirmacion_cliente: 'Confirmación al cliente',
   transferencia_completada: 'Transferencia completada',
+  venta_cancelada: 'Aviso de cancelación al cliente',
 }
 
 function Fila({ k, v }: { k: string; v: React.ReactNode }) { return <div><dt>{k}</dt><dd>{v}</dd></div> }

@@ -28,13 +28,19 @@ export function Confirmar({ titulo, texto, confirmar, peligro = false, ocupado =
 }) {
   const cancelar = useRef<HTMLButtonElement>(null)
   const previo = useRef<Element | null>(null)
+  // onCancelar y ocupado van por ref: si fueran dependencias del efecto, cada letra escrita en un campo del diálogo (que re-renderiza
+  // la pantalla y crea otra onCancelar) lo volvería a ejecutar y el foco saltaba de la casilla al botón «Cancelar».
+  const vivo = useRef({ onCancelar, ocupado })
+  vivo.current = { onCancelar, ocupado }
   useEffect(() => {
     previo.current = document.activeElement
-    cancelar.current?.focus()
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape' && !ocupado) onCancelar() }
+    // Si el diálogo trae un campo para escribir, el foco va ahí; si no, al botón «Cancelar» (la opción segura).
+    const campo = document.querySelector<HTMLElement>('.adm-modal-caja textarea, .adm-modal-caja input:not([type="hidden"])')
+    ;(campo ?? cancelar.current)?.focus()
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape' && !vivo.current.ocupado) vivo.current.onCancelar() }
     document.addEventListener('keydown', esc)
     return () => { document.removeEventListener('keydown', esc); (previo.current as HTMLElement | null)?.focus?.() }
-  }, [onCancelar, ocupado])
+  }, [])
   return <div className="adm-modal" onMouseDown={e => { if (e.target === e.currentTarget && !ocupado) onCancelar() }}>
     <div className="adm-modal-caja" role="dialog" aria-modal="true" aria-labelledby="adm-modal-titulo">
       <h2 id="adm-modal-titulo">{titulo}</h2>

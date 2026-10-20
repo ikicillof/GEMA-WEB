@@ -25,6 +25,7 @@ const base: DatosMail = {
   transferencia: null,
   urlWhatsApp: 'https://wa.me/5491128397462?text=Hola%20Gemma',
   urlMisCompras: 'https://backend--gemmaweb.netlify.app/mis-compras',
+  urlTienda: 'https://backend--gemmaweb.netlify.app/tienda',
 }
 const transferencia: DatosMail = {
   ...base,

@@ -62,6 +62,7 @@ export async function datosDeVenta(id: string, d: FirebaseFirestore.DocumentData
     transferencia: esTransferencia ? transferencia : null,
     urlWhatsApp: `https://wa.me/${whatsapp}?text=${encodeURIComponent(texto)}`,
     urlMisCompras: `${sitio}/mis-compras`,
+    urlTienda: `${sitio}/tienda`,
   }
 }
 
@@ -122,6 +123,7 @@ export async function enviarMails(id: string, tipos: TipoMail[]): Promise<void> 
 export type { TipoMail }
 export const avisarVentaNueva = (id: string) => enviarMails(id, ['nueva_venta_duena', 'confirmacion_cliente'])
 export const avisarTransferenciaCompletada = (id: string) => enviarMails(id, ['transferencia_completada'])
+export const avisarVentaCancelada = (id: string) => enviarMails(id, ['venta_cancelada'])
 
 /** Reintenta los mails que fallaron: los de una venta (si se pasa `id`) o los de todas las ventas con mailsPendientes. */
 export async function reintentarMailsFallidos(id?: string): Promise<{ ventas: number; reintentados: number; siguenFallando: number }> {
