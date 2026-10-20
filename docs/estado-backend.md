@@ -32,6 +32,7 @@ Cargadas, secretas: `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `MERCADOPAG
 - `MERCADOPAGO_WEBHOOK_SECRET` (secreta). Sin ella el webhook responde 503 a todo.
 - `MICORREO_USER` y `MICORREO_PASSWORD` (secretas), `MICORREO_CUSTOMER_ID`, `MICORREO_ORIGIN_CP` y `MICORREO_BASE_URL`. Sin ellas el envío queda en cotización simulada.
 - Cargadas el 20/10/2026 (solo Branch deploys): `RESEND_API_KEY` (secreta), `RESEND_FROM_EMAIL` (`Gemma <hola@gemma-oficial.com.ar>`) y `RESEND_REPLY_TO` (provisorio: email de Iván; reemplazar por el de la tienda). El 20/10 se comprobó que no estaban en Netlify (aunque este doc decía que sí) y se cargaron de nuevo.
+- Novedades por email, cargadas el 20/10/2026 (solo Branch deploys, secretas): `NOVEDADES_SECRET` (autentica la función de fondo) y `NOVEDADES_TOKEN_SECRET` (firma los links «Darme de baja»; si se cambia, los links de mails ya enviados dejan de valer). Opcionales: `RESEND_LIMITE_DIARIO` (por defecto 100, el plan gratuito) y `NOVEDADES_RESERVA_VENTAS` (por defecto 20 mails por día que las novedades NO usan, para que nunca le quiten lugar a un mail de venta).
 - Cloudinary, cargadas el 20/10/2026 (solo Branch deploys): `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` y `CLOUDINARY_API_SECRET` (secreta). Las usa el panel para subir fotos de productos.
 
 Fuera de Netlify:
@@ -72,6 +73,26 @@ Fotos: el navegador pide una firma a `POST /api/admin/uploads/firma` (carpeta y 
 3. Colaborador solo con `ventas:ver`: Productos muestra «No tenés permiso».
 4. Admin: puede todo menos tocar admins y al creador; en Equipo solo suma y quita colaboradores.
 5. Creador: además suma y quita admins.
+
+## Novedades por email
+
+**Cómo se consiente.** En el login (Google o email) hay una casilla «Quiero recibir novedades de Gemma por email», arriba de las opciones y siempre destildada al abrir. `POST /api/auth/sync` crea el perfil con `recibeNovedades` según la casilla, **solo al crearlo**; una cuenta que ya existe nunca cambia lo que había elegido (para eso está «Mi cuenta», `/mi-cuenta`, también en el menú de usuario). El perfil guarda `novedadesPreguntadas` (solo escribe el servidor). A quien entra con Google sin tildar la casilla se le muestra **una sola vez**, abajo de la pantalla, «¿Querés enterarte de las novedades de Gemma?» con «Sí, quiero» / «No, gracias»; cualquier respuesta se guarda en el perfil y no vuelve a salir. Decisión: ese aviso también les sale una vez a las cuentas de Google que ya existían y nunca respondieron; su valor solo cambia si ellas contestan «Sí». Los usuarios existentes no se tocaron.
+
+**Baja.** Cada mail trae «Darme de baja» → `/baja?t=…` (sin login, token firmado con HMAC; no vence). Al abrir el link la persona queda de baja y ve la confirmación, con «Me equivoqué» para volver. También lleva los encabezados `List-Unsubscribe` (baja con un clic de Gmail/Apple Mail, `POST /api/novedades/baja?t=…`). Nota: como la baja ocurre al abrir el link, un antivirus de mail que abra los links de antemano podría dar de baja a alguien; el «Me equivoqué» lo cubre.
+
+**Envío desde el panel** (`/admin/novedades`, solo creador y admin): asunto, mensaje con formato básico (`**negrita**`, `[texto](https://link)`, saltos de línea; **no se acepta HTML**), imagen opcional (Cloudinary), vista previa con la misma plantilla de los mails de venta, «Enviarme una prueba», confirmación con la cantidad de destinatarios, e historial (fecha, asunto, enviados, pendientes, con error, bajas y estado) que se actualiza solo mientras hay un envío en marcha.
+
+**Cómo se manda.** Al confirmar, la web congela la lista de destinatarios (solo `recibeNovedades: true` **y email verificado en Firebase Auth**: sin verificar, alguien podría haber registrado el email de otra persona), guarda el mail ya armado en `novedades/{id}` y despierta la función de fondo `netlify/functions/novedades-background.mjs` (15 minutos de margen, autenticada con `NOVEDADES_SECRET`). Esa función manda de a 100 con la API de batch de Resend (`netlify/lib/novedades-core.mjs`), con un mail por persona y su link de baja propio. Antes de cada lote vuelve a leer el perfil: quien se dio de baja después de armar el envío **no** recibe el mail. Un candado y la `Idempotency-Key` evitan duplicados. Un envío a la vez.
+
+**Límite diario de Resend.** El contador `mailsDiarios/{aaaa-mm-dd}` (día UTC) lo suman las novedades y también los mails de venta. Las novedades usan solo `límite − reserva − enviados hoy`. Lo que no entra queda «En cola» y sigue solo al día siguiente con la función programada `novedades-diario.mjs` (12:00 UTC, 9:00 en Argentina), o a mano con «Continuar el envío» en el panel.
+
+**Cómo se probó.** `npm run test:novedades -- tucasilla+novedades@gmail.com` (20 comprobaciones, manda 1 mail real y limpia lo que crea): el token de la función y el de la web coinciden y no se pueden adulterar; un `<script>` o un link `javascript:` no llegan al mail; sin cupo no se manda y queda en cola; con cupo se manda al suscripto y se omite a quien se dio de baja; el contador sube 1; correr de nuevo no reenvía. Ese test encontró un bug real (la ejecución se bloqueaba a sí misma después del primer lote), ya corregido. `npm run mails:reintentar` lista (y con `--confirmar` reintenta) los mails de venta pendientes de las ventas de prueba.
+
+**Límites conocidos:**
+- **Netlify solo ejecuta las funciones programadas en el deploy de producción publicado.** En el deploy de la rama `backend` el envío diario automático **no corre**: mientras tanto hay que usar «Continuar el envío». Al publicar en producción hay que cargar también estas variables en el contexto Production.
+- El día del cupo se cuenta en UTC (es lo que se asume que usa Resend). Solo cuenta lo que mandamos nosotros: si se usa la misma cuenta de Resend para otra cosa, esos mails no entran en el contador.
+- El test cubre un lote; el envío de varios lotes seguidos (más de 100 suscriptos) no se probó con mails reales.
+- Las funciones de fondo y programadas de Netlify no se pueden probar con `next dev`; se prueban en el deploy.
 
 ## Pendiente
 

@@ -17,7 +17,9 @@
     "test:checkout": "node --env-file=.env.local scripts/test-checkout.mjs",
     "test:pagos": "tsx --conditions=react-server --env-file=.env.local scripts/test-pagos.mts",
     "limpiar:pruebas": "tsx --env-file=.env.local scripts/limpiar-pruebas.ts",
-    "mails:ejemplo": "tsx --tsconfig scripts/tsconfig.mails.json --env-file=.env.local scripts/mails-ejemplo.mts"
+    "mails:ejemplo": "tsx --tsconfig scripts/tsconfig.mails.json --env-file=.env.local scripts/mails-ejemplo.mts",
+    "mails:reintentar": "tsx --tsconfig scripts/tsconfig.mails.json --env-file=.env.local scripts/mails-reintentar.mts",
+    "test:novedades": "tsx --tsconfig scripts/tsconfig.mails.json --env-file=.env.local scripts/test-novedades.mts"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",

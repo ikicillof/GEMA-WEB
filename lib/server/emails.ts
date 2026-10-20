@@ -5,6 +5,7 @@ import { armar, mandar, pesos, type TipoMail } from '@/lib/mail-core'
 import { adminDb } from '@/lib/firebase/admin'
 import { WHATSAPP_NUMERO } from '@/lib/envio'
 import { getConfiguracion } from '@/lib/server/catalogo'
+import { contarEnvios } from '@/lib/server/novedades-admin'
 import { urlDelSitio } from '@/lib/server/mercadopago'
 
 /**
@@ -104,6 +105,8 @@ export async function enviarMails(id: string, tipos: TipoMail[]): Promise<void> 
         const avisos = tipo === 'nueva_venta_duena' ? (await getConfiguracion()).emailAvisos : null
         const armado = armar(tipo, await datosDeVenta(id, d), d.modoPrueba === true, avisos)
         const resendId = await mandar(armado)
+        // Comparte el límite diario de Resend con las novedades: si no se puede contar, el mail ya salió y no se frena nada.
+        await contarEnvios(1).catch(e => console.error('[emails] no se pudo contar el envío:', (e as Error).message))
         await registrar(id, tipo, { ok: true, resendId })
       } catch (e) {
         const mensaje = (e as Error).message || 'Error desconocido'

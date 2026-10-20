@@ -6,3 +6,9 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# Funciones propias (envío de novedades). firebase-admin va sin empaquetar (usa el de node_modules, con el override de jwks-rsa 3.x).
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  external_node_modules = ["firebase-admin"]
