@@ -1,6 +1,6 @@
 # Estado de la rama `backend`
 
-Última actualización: 19/10/2026. Este documento no contiene valores de claves ni secretos; solo nombres de variables.
+Última actualización: 20/10/2026. Este documento no contiene valores de claves ni secretos; solo nombres de variables.
 
 ## Qué está terminado
 
@@ -31,8 +31,8 @@ Cargadas, secretas: `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `MERCADOPAG
 **Faltan:**
 - `MERCADOPAGO_WEBHOOK_SECRET` (secreta). Sin ella el webhook responde 503 a todo.
 - `MICORREO_USER` y `MICORREO_PASSWORD` (secretas), `MICORREO_CUSTOMER_ID`, `MICORREO_ORIGIN_CP` y `MICORREO_BASE_URL`. Sin ellas el envío queda en cotización simulada.
-- Cargadas el 19/10/2026 (solo Branch deploys): `RESEND_API_KEY` (secreta), `RESEND_FROM_EMAIL` (`Gemma <hola@gemma-oficial.com.ar>`) y `RESEND_REPLY_TO` (provisorio: email de Iván; reemplazar por el de la tienda).
-- Opcional: variables de Cloudinary (todavía no se usan).
+- Cargadas el 20/10/2026 (solo Branch deploys): `RESEND_API_KEY` (secreta), `RESEND_FROM_EMAIL` (`Gemma <hola@gemma-oficial.com.ar>`) y `RESEND_REPLY_TO` (provisorio: email de Iván; reemplazar por el de la tienda). El 20/10 se comprobó que no estaban en Netlify (aunque este doc decía que sí) y se cargaron de nuevo.
+- Cloudinary, cargadas el 20/10/2026 (solo Branch deploys): `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` y `CLOUDINARY_API_SECRET` (secreta). Las usa el panel para subir fotos de productos.
 
 Fuera de Netlify:
 - Agregar `backend--gemmaweb.netlify.app` en Firebase Auth → Authorized domains (sin eso el login del deploy no funciona).
@@ -40,9 +40,38 @@ Fuera de Netlify:
 
 ## Mails de venta (Resend)
 
-Plantillas React Email en `emails/`, armado y envío en `lib/mail-core.ts` y `lib/server/emails.ts`. Tres mails: aviso a la dueña (a `configuracion/general.emailAvisos`) y confirmación al cliente cuando se aprueba un pago de Mercado Pago o se crea una venta por transferencia; y «Recibimos tu transferencia» al cliente cuando se completa. Con venta de prueba el asunto lleva `[PRUEBA]`. Si Resend falla, la venta se guarda igual y el error queda en `orders/{id}.emails.<tipo>` con `mailsPendientes: true`; `POST /api/admin/mails/reintentar` (admin) los reintenta. `POST /api/admin/pedidos/{id}/completar` (admin) completa una transferencia y manda el mail. El link «Ver la venta en el panel» apunta a `/admin/ventas/{id}`, que todavía no existe. Ejemplos: `npm run mails:ejemplo -- tu@email.com`.
+Plantillas React Email en `emails/`, armado y envío en `lib/mail-core.ts` y `lib/server/emails.ts`. Tres mails: aviso a la dueña (a `configuracion/general.emailAvisos`) y confirmación al cliente cuando se aprueba un pago de Mercado Pago o se crea una venta por transferencia; y «Recibimos tu transferencia» al cliente cuando se completa. Con venta de prueba el asunto lleva `[PRUEBA]`. Si Resend falla, la venta se guarda igual y el error queda en `orders/{id}.emails.<tipo>` con `mailsPendientes: true`; `POST /api/admin/mails/reintentar` (admin) los reintenta. `POST /api/admin/pedidos/{id}/completar` (admin) completa una transferencia y manda el mail. El link «Ver la venta en el panel» apunta a `/admin/ventas/{id}` (ya existe, ver «Panel de administración»). Ejemplos: `npm run mails:ejemplo -- tu@email.com`.
 
 **Estado al 19/10/2026:** Resend rechaza el envío con «The gemma-oficial.com.ar domain is not verified». Hay que revisar en resend.com/domains que el dominio figure Verified en la misma cuenta/equipo que la API key.
+
+## Panel de administración (`/admin`)
+
+Link «Panel» en el menú de usuario (solo para creador, admin y colaborador). Estilo del brand book, pensado para el celular, con `CargaGemma` en las esperas.
+
+**Cómo se protege.** `lib/server/admin.ts` (`exigirStaff`) es la puerta de TODA ruta `/api/admin/*`: límite por IP, ID token válido, rol leído FRESCO desde Firebase (no del token), rol mínimo y, para colaboradores, el permiso puntual. Quien no es del equipo recibe 404 (no se revela el panel); un colaborador sin permiso, 403. En la interfaz, `components/admin/admin-shell.tsx` le pregunta al servidor quién es la persona (`GET /api/admin/yo`) en cada página y cada cambio de ruta; si no es del equipo muestra la 404 y no pide ningún dato. Ocultar botones es solo comodidad: la protección real es el servidor. Todo cambio queda en la colección `auditoria`.
+
+| Sección | Qué permite | Quién |
+|---|---|---|
+| Ventas (`/admin/ventas`, `/admin/ventas/{id}`) | Lista con filtros (estado, método de pago, fecha) y buscador por n.º de pedido o cliente. Marca «Prueba» (`modoPrueba`), destaca `requiereRevision` y `mailsPendientes`. Detalle con productos, cliente, envío, total e historial. Reintentar mails, «Marcar como completada» (transferencias, con confirmación) y cancelar con motivo (solo ventas sin cobrar). | Ver: colaborador con `ventas:ver`. Modificar: admin o creador. |
+| Productos (`/admin/productos`) | Lista con buscador y filtros (categoría, visible/oculto). Alta, edición, ocultar y eliminar (con confirmación). Colores con selector, fotos a Cloudinary (firma del servidor, orden por arrastre o flechas, vista previa), modelo 3D (.glb) opcional. Aviso de «Medidas provisorias»: se apaga al guardar medidas nuevas y completas o al tildar «son las medidas reales». Cada cambio llama a `revalidarCatalogo()`. | Ver: colaborador con `productos:ver`. Modificar: admin o creador. |
+| Equipo (`/admin/equipo`) | Lista de personas con acceso y su rol. Sumar colaboradores por el email de una cuenta ya registrada y con email verificado, y quitarlos; cambiar sus permisos. El creador además suma y quita admins. Nadie modifica al creador ni a sí mismo. | Admin o creador (el resto ve la 404). |
+| Configuración (`/admin/configuracion`) | Descuento por transferencia, datos de transferencia (al guardar un alias distinto del de ejemplo se apaga el aviso de provisorio), WhatsApp y email de avisos. | Admin o creador (el resto ve la 404). |
+
+Fotos: el navegador pide una firma a `POST /api/admin/uploads/firma` (carpeta y formatos fijos, vence en minutos) y sube directo a Cloudinary; el API Secret nunca sale del servidor. Se probó el 20/10 una subida firmada real (aceptada) y una con la carpeta cambiada (rechazada con 401).
+
+**Límites conocidos del panel:**
+- No hay cookie de sesión (Firebase vive en el navegador), así que las páginas `/admin/*` responden 200 con la 404 dibujada; los datos nunca viajan sin pasar por la API verificada.
+- El límite por IP es en memoria (mejor esfuerzo en funciones serverless). Decisión: alcanza por ahora.
+- `modelo3d` se guarda con el producto, pero la ficha de la tienda todavía no lo lee ni muestra «Ver en 3D».
+- Eliminar productos y cancelar ventas piden confirmación en la interfaz (decisión: alcanza).
+- En esta máquina `next build` se queda sin memoria si hay muchos programas abiertos: usar `NODE_OPTIONS=--max-old-space-size=1536 npx next build --no-lint`. ESLint no está configurado en el repo (`next lint` abre un asistente).
+
+**Para probar con cada rol** (cuentas con email verificado; el cambio de rol corta la sesión, hay que volver a ingresar):
+1. Cliente (o sin sesión): `/admin` y `/admin/ventas` muestran la 404; el menú no tiene «Panel».
+2. Colaborador con ambos permisos: ve Ventas y Productos solo para mirar (sin botones de modificar); Equipo y Configuración dan 404.
+3. Colaborador solo con `ventas:ver`: Productos muestra «No tenés permiso».
+4. Admin: puede todo menos tocar admins y al creador; en Equipo solo suma y quita colaboradores.
+5. Creador: además suma y quita admins.
 
 ## Pendiente
 
@@ -57,7 +86,7 @@ Plantillas React Email en `emails/`, armado y envío en `lib/mail-core.ts` y `li
 
 ## Próximo paso recomendado
 
-Cargar la clave secreta del webhook, redeployar y hacer la primera compra de prueba real con la cuenta de vendedor de prueba. Después: panel de administración (ventas, catálogo; debe llamar `revalidarCatalogo()`), cambio de estado a `completado`, avisos por email (Resend) y visor 3D con botón «Ver en 3D» (`modelo3d` ya está en `perro-globo`, falta pasarlo a la ficha). No se mergea a `main` hasta cerrar la prueba de pagos.
+Cargar la clave secreta del webhook, redeployar y hacer la primera compra de prueba real con la cuenta de vendedor de prueba. Después: probar el panel con cada rol (ver «Panel de administración») y el visor 3D con botón «Ver en 3D» (`modelo3d` ya está en `perro-globo` y el panel lo guarda; falta pasarlo a la ficha). No se mergea a `main` hasta cerrar la prueba de pagos.
 
 ## Otras deudas conocidas
 
