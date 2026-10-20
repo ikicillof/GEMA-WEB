@@ -17,7 +17,7 @@ export function DeshacerBaja({ token }: { token: string }) {
 
   if (estado === 'hecho') return <p className="auth-ok" role="status">Listo, volviste a la lista de novedades.</p>
   return <>
-    <button type="button" className="button button--secundario" onClick={volver} disabled={estado === 'enviando'}>Me equivoqué, quiero volver a recibirlas</button>
+    <button type="button" className="button button--claro" onClick={volver} disabled={estado === 'enviando'}>Me equivoqué, quiero volver a recibirlas</button>
     {estado === 'error' && <p className="auth-error" role="alert">No pudimos hacerlo. Probá de nuevo.</p>}
     <CargaGemma compacta activa={estado === 'enviando'} mensaje="Guardando…" />
   </>

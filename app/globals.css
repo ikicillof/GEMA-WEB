@@ -888,6 +888,13 @@ body.nf-active .gemi-global { visibility:hidden; }
 .button:disabled { opacity:.6; cursor:wait; transform:none; }
 @keyframes novedades-in { from { opacity:0; transform:translate(-50%,16px); } to { opacity:1; transform:translate(-50%,0); } }
 @media (prefers-reduced-motion: reduce) { .novedades-aviso { animation:none; } }
+/* Página «Darme de baja»: fondo oscuro y frases largas, así que el título va más chico y sin el trazo grueso de la marca (que en un celular angosto pegotea las letras). */
+.page-title.baja-titulo { max-width:18ch; font-size:clamp(30px,8.5vw,56px); line-height:1.08; letter-spacing:-.025em; font-weight:700; -webkit-text-stroke:0; filter:none; overflow-wrap:break-word; }
+.page-hero .baja-titulo + .page-hero-copy { max-width:46ch; margin:16px 0 0; font-size:15px; line-height:1.65; color:rgba(255,255,255,.85); }
 .novedades-baja-acciones { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:22px; }
+.novedades-baja-acciones .auth-ok, .novedades-baja-acciones .auth-error { flex:1 1 100%; margin:0; }
+.button--claro { border:1.5px solid #fff; background:transparent; color:#fff; }
+.button--claro:hover { background:rgba(255,255,255,.14); }
+@media (max-width:700px) { .novedades-baja-acciones { flex-direction:column; align-items:stretch; } .novedades-baja-acciones .button { width:100%; text-align:center; } }
 .cuenta-datos { display:grid; gap:4px; margin:0 0 18px; font-size:14px; }
 .cuenta-datos b { font-size:12px; letter-spacing:.04em; text-transform:uppercase; color:var(--violet); }
