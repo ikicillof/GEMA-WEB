@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Poppins } from 'next/font/google'
 import './globals.css'
 import { CartProvider } from '@/components/cart-context'
@@ -29,6 +29,9 @@ export const metadata: Metadata = {
   openGraph: { type: 'website', locale: 'es_AR', siteName: MARCA.nombre, title: `${MARCA.nombre} | ${MARCA.lema}`, description: MARCA.descripcion, images: [{ url: '/og-gemma.png', width: 1200, height: 630, alt: `${MARCA.nombre}: ${MARCA.lema.toLowerCase()}` }] },
   twitter: { card: 'summary_large_image', title: `${MARCA.nombre} | ${MARCA.lema}`, description: MARCA.descripcion, images: ['/og-gemma.png'] },
 }
+
+// Color de la barra del navegador en el celular (el rosa de la marca).
+export const viewport: Viewport = { themeColor: '#FF4DA6' }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return <html lang="es-AR"><body className={poppins.variable}><AuthProvider><CartProvider><SmoothScroll /><InitialLoader /><PageTransition /><SiteHeader /><main>{children}</main><SiteFooter /><CartDrawer /><GemiGlobal /><GemmaMotion /><CursorTrail /><LoginModal /><AvisoNovedades /></CartProvider></AuthProvider></body></html>

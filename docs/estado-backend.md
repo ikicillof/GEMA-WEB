@@ -183,3 +183,15 @@ Se veía rara porque está fuera de `.auth-form` y no recibía el estilo de `.au
 - Redirección: abrir `www.gemma-oficial.com.ar/tienda` y comprobar que cae en `gemma-oficial.com.ar/tienda`.
 - noindex: `curl -I https://<sitio-netlify>/` muestra `x-robots-tag: noindex, nofollow`.
 - Rendimiento: PageSpeed Insights en modo celular con la URL del home.
+
+## Favicon, íconos y manifiesto (21/10)
+
+El zip original queda en `materials/` (carpeta ignorada por git: `materials/` está en `.gitignore`; ojo, los 14 archivos que ya estaban commiteados en `materials/modelos/` siguen en el repo hasta que se los saque con `git rm --cached`).
+- `app/favicon.ico` (16, 32, 48 y 64 px), `app/icon.png` (512x512, transparente) y `app/apple-icon.png` (180x180, fondo grafito): Next los enlaza solo en el `<head>`. No había ningún favicon anterior ni el de Next por defecto.
+- `app/manifest.ts` → `/manifest.webmanifest`: nombre y nombre corto «Gemma», `es-AR`, `start_url: /`, `display: standalone`, `theme_color #FF4DA6`, `background_color #FFF9F5`. Íconos en `public/icons/`: 192, 512 y `icon-maskable-512.png` (el zip lo traía con fondo grafito y la G dentro de la zona segura, así que no se generó uno con fondo crema). `viewport.themeColor` = `#FF4DA6` en `app/layout.tsx`.
+- Cómo verificar: pestaña del navegador con la G; en Chrome del celular, menú ⋮ → «Agregar a pantalla de inicio»; en DevTools → Application → Manifest.
+
+## Mails: avisos viejos y entregabilidad (21/10)
+
+- **Los 6 avisos a la dueña en error** (`Invariant: incrementalCache missing…`, bug ya corregido) son de pruebas: `3d0Xs17YEDvDsrbE0oWK`, `IrJ3l7gZxZIrW8l68Knl`, `eQtWimo8nO0qRJhzbxVp`, `fjFqbjboU9cSWQbhWvN0`, `hibLDwDlBwuusKE8zN65` y `kodCv6LiBdG5iRQZbTxn`, todos con `modoPrueba: true` (de hecho las 15 ventas actuales lo son). No se reintentaron: se borran con `npm run limpiar:pruebas -- --confirmar`. Ese script solo limpia `orders` y `carritos`; **las solicitudes de prueba de la colección `arrepentimientos` no se borran** (hoy hay 4 de prueba).
+- **DNS de `gemma-oficial.com.ar`** (consultado con `Resolve-DnsName`; el DNS es el de Netlify): DKIM de Resend presente (`resend._domainkey`); SPF y MX de Resend presentes en el subdominio `send.` (así es como lo pide Resend); **DMARC presente pero mínimo: `v=DMARC1; p=none;` sin dirección de reportes**. El dominio raíz no tiene registro MX (no recibe correo) ni SPF propio.

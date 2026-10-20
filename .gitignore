@@ -12,6 +12,9 @@ out
 .env.*.local
 .impeccable/
 
+# Materiales de trabajo (originales, zips, modelos fuente): no se suben al repo
+materials/
+
 # Claves de cuentas de servicio (secretas)
 *-firebase-adminsdk-*.json
 serviceAccount*.json
