@@ -893,6 +893,30 @@ body.nf-active .gemi-global { visibility:hidden; }
 .page-hero .baja-titulo + .page-hero-copy { max-width:46ch; margin:16px 0 0; font-size:15px; line-height:1.65; color:rgba(255,255,255,.85); }
 .novedades-baja-acciones { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:22px; }
 .novedades-baja-acciones .auth-ok, .novedades-baja-acciones .auth-error { flex:1 1 100%; margin:0; }
+/* Páginas legales: título sin el trazo grueso de la marca (con frases largas se pegotea en el celular) y texto cómodo de leer. */
+.page-title.legal-titulo { max-width:20ch; font-size:clamp(30px,8vw,60px); line-height:1.08; letter-spacing:-.025em; font-weight:700; -webkit-text-stroke:0; filter:none; overflow-wrap:break-word; }
+.legal-hero { padding:130px 0 40px; }
+.legal-hero .page-hero-copy { max-width:none; margin:14px 0 0; font-size:13px; color:rgba(255,255,255,.78); }
+.legal { padding:44px 0 90px; background:var(--cream); color:var(--graphite); }
+.legal-cuerpo { max-width:760px; font-size:15px; line-height:1.75; overflow-wrap:break-word; }
+.legal-cuerpo h2 { margin:34px 0 10px; font-size:20px; line-height:1.25; letter-spacing:-.03em; scroll-margin-top:96px; }
+.legal-cuerpo p { margin:0 0 14px; }
+.legal-cuerpo ul, .legal-cuerpo ol { display:flex; flex-direction:column; gap:8px; margin:0 0 16px; padding-left:22px; }
+.legal-cuerpo a { color:var(--violet); font-weight:600; text-decoration:underline; text-underline-offset:3px; }
+.legal-cuerpo a:focus-visible { outline:3px solid var(--violet); outline-offset:2px; border-radius:4px; }
+.legal-aviso { padding:14px 16px; border:1px solid rgba(15,15,16,.12); border-radius:16px; background:#fff; font-size:13px; line-height:1.65; }
+.marcador { padding:1px 5px; border-radius:5px; background:var(--yellow); color:var(--graphite); font-weight:700; }
+.legal-nota { max-width:760px; margin:0 0 26px; padding:14px 16px; border:2px dashed var(--violet); border-radius:18px; background:#fff; font-size:13px; line-height:1.6; }
+.legal-nota p { margin:6px 0 0; }
+.legal-nota code { padding:1px 5px; border-radius:5px; background:rgba(109,40,217,.1); font-size:12px; }
+.checkout-legal { margin:0 0 12px; }
+.checkout-legal a { color:var(--violet); font-weight:600; text-decoration:underline; text-underline-offset:3px; }
+/* Footer: datos de la vendedora y espacio para el QR de Data Fiscal */
+.footer-vendedora { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:18px; padding:22px 0; border-top:1px solid rgba(255,255,255,.12); }
+.footer-vendedora p { max-width:62ch; margin:0; color:rgba(255,255,255,.72); font-size:12px; line-height:1.75; }
+.footer-qr { display:grid; place-items:center; width:96px; height:96px; padding:6px; border:1.5px dashed rgba(255,255,255,.4); border-radius:12px; color:rgba(255,255,255,.65); font-size:9px; font-weight:700; letter-spacing:.06em; text-align:center; text-transform:uppercase; }
+.footer-qr img { display:block; width:100%; height:100%; object-fit:contain; border-radius:6px; background:#fff; }
+.footer-bottom .footer-arrepentimiento { font-size:12px; font-weight:700; }
 .button--claro { border:1.5px solid #fff; background:transparent; color:#fff; }
 .button--claro:hover { background:rgba(255,255,255,.14); }
 @media (max-width:700px) { .novedades-baja-acciones { flex-direction:column; align-items:stretch; } .novedades-baja-acciones .button { width:100%; text-align:center; } }

@@ -325,6 +325,7 @@ export function CheckoutClient() {
           <div id="checkout-pago" className="checkout-card checkout-pay">
             <h2>Elegí cómo pagar</h2>
             {!hayCotizacion && !errorEnvio && <p className="checkout-hint" id="pago-aviso">Completá tu código postal para calcular el envío</p>}
+            <p className="checkout-hint checkout-legal">Al comprar aceptás los <Link href="/terminos" target="_blank" rel="noopener">términos y condiciones</Link>.</p>
             <div className="pay-actions">
               <button ref={el => { botones.current.mercadopago = el }} type="button" className="button button--dark pay-btn" onClick={alTocar('mercadopago')}
                 disabled={!hayCotizacion || !!pagando} aria-describedby={hayCotizacion ? undefined : 'pago-aviso'}>
