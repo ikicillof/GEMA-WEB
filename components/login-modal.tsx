@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { MailCheck, X } from 'lucide-react'
+import { Eye, EyeOff, MailCheck, X } from 'lucide-react'
 import { ErrorAuth, useAuth, type ModoLogin } from './auth-provider'
 import { CargaGemma } from './carga-gemma'
 import { GemmaStar } from './gemma-ornament'
@@ -20,6 +20,7 @@ export function LoginModal() {
   const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [verPassword, setVerPassword] = useState(false)
   const [novedades, setNovedades] = useState(false) // destildada por defecto
   const [error, setError] = useState<ErrorAuth | null>(null)
   const [aviso, setAviso] = useState<Aviso>(null)
@@ -100,7 +101,7 @@ export function LoginModal() {
         <form onSubmit={enviar} className="auth-form">
           {modo === 'registro' && <label>Nombre<input type="text" value={nombre} onChange={e => setNombre(e.target.value)} required maxLength={80} autoComplete="name" /></label>}
           <label>Email<input type="email" value={email} onChange={e => setEmail(e.target.value)} required maxLength={254} autoComplete="email" /></label>
-          {modo !== 'recuperar' && <label>Contraseña<input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={modo === 'registro' ? 8 : undefined} maxLength={128} autoComplete={modo === 'registro' ? 'new-password' : 'current-password'} />{modo === 'registro' && <small>Al menos 8 caracteres.</small>}</label>}
+          {modo !== 'recuperar' && <label>Contraseña<span className="auth-pass"><input type={verPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required minLength={modo === 'registro' ? 8 : undefined} maxLength={128} autoComplete={modo === 'registro' ? 'new-password' : 'current-password'} /><button type="button" className="auth-pass-ojo" onClick={() => setVerPassword(v => !v)} aria-label={verPassword ? 'Ocultar la contraseña' : 'Mostrar la contraseña'} aria-pressed={verPassword}>{verPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}</button></span>{modo === 'registro' && <small>Al menos 8 caracteres.</small>}</label>}
 
           {error && <p className="auth-error" role="alert">{error.message}{error.codigo === 'no-verificado' && !reenviado && <> <button type="button" className="auth-link" onClick={() => correr(async () => { await reenviarVerificacion(email, password); setReenviado(true) })}>Reenviar email</button></>}</p>}
           {reenviado && <p className="auth-ok" role="status">Listo, te mandamos otro email de verificación.</p>}
