@@ -120,12 +120,14 @@ export type { TipoMail }
 export const avisarVentaNueva = (id: string) => enviarMails(id, ['nueva_venta_duena', 'confirmacion_cliente'])
 export const avisarTransferenciaCompletada = (id: string) => enviarMails(id, ['transferencia_completada'])
 
-/** Reintenta los mails que fallaron (ventas con mailsPendientes). */
-export async function reintentarMailsFallidos(): Promise<{ ventas: number; reintentados: number; siguenFallando: number }> {
-  const snap = await ordenes().where('mailsPendientes', '==', true).get()
+/** Reintenta los mails que fallaron: los de una venta (si se pasa `id`) o los de todas las ventas con mailsPendientes. */
+export async function reintentarMailsFallidos(id?: string): Promise<{ ventas: number; reintentados: number; siguenFallando: number }> {
+  const docs = id
+    ? [await ordenes().doc(id).get()].filter(d => d.exists && d.get('mailsPendientes') === true)
+    : (await ordenes().where('mailsPendientes', '==', true).get()).docs
   let reintentados = 0
   let siguenFallando = 0
-  for (const doc of snap.docs) {
+  for (const doc of docs) {
     const emails = (doc.get('emails') ?? {}) as Record<string, { estado?: string }>
     const tipos = Object.entries(emails).filter(([, m]) => m.estado === 'error').map(([t]) => t as TipoMail)
     await enviarMails(doc.id, tipos)
@@ -133,5 +135,5 @@ export async function reintentarMailsFallidos(): Promise<{ ventas: number; reint
     const despues = ((await doc.ref.get()).get('emails') ?? {}) as Record<string, { estado?: string }>
     siguenFallando += tipos.filter(t => despues[t]?.estado === 'error').length
   }
-  return { ventas: snap.size, reintentados, siguenFallando }
+  return { ventas: docs.length, reintentados, siguenFallando }
 }
