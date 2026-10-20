@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { AlertTriangle, CheckCircle2, Info } from 'lucide-react'
+import type { EstadoPedido } from '@/lib/pedidos'
 
 /** Aviso dentro de una página del panel. `error` y `ok` se anuncian a los lectores de pantalla. */
 export function Aviso({ tipo = 'aviso', children }: { tipo?: 'aviso' | 'error' | 'ok' | 'info'; children: React.ReactNode }) {
@@ -46,6 +47,11 @@ export function Confirmar({ titulo, texto, confirmar, peligro = false, ocupado =
     </div>
   </div>
 }
+
+/** Color de la etiqueta de cada estado de venta. */
+export const claseEstado = (e: EstadoPedido) =>
+  e === 'pagado' ? 'adm-chip--ok' : e === 'completado' ? 'adm-chip--listo' : e === 'cancelado' ? 'adm-chip--malo' : 'adm-chip--espera'
+export const textoMetodo = (m: string) => (m === 'transferencia' ? 'Transferencia' : 'Mercado Pago')
 
 export const fechaHora = (iso: string | null) => iso
   ? new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(iso))
