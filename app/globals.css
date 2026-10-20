@@ -922,3 +922,14 @@ body.nf-active .gemi-global { visibility:hidden; }
 @media (max-width:700px) { .novedades-baja-acciones { flex-direction:column; align-items:stretch; } .novedades-baja-acciones .button { width:100%; text-align:center; } }
 .cuenta-datos { display:grid; gap:4px; margin:0 0 18px; font-size:14px; }
 .cuenta-datos b { font-size:12px; letter-spacing:.04em; text-transform:uppercase; color:var(--violet); }
+/* Botón de arrepentimiento */
+.arr-form { position:relative; display:flex; flex-direction:column; gap:16px; max-width:560px; margin:22px 0 26px; padding:26px; border-radius:28px; background:#fff; box-shadow:0 14px 40px rgba(15,15,16,.08); }
+.arr-form .button { align-self:flex-start; }
+.arr-form .button:disabled { opacity:.6; cursor:wait; }
+.checkout-field textarea { padding:12px 14px; border:1.5px solid var(--borde-campo); border-radius:14px; background:#fff; color:var(--graphite); font:inherit; font-size:14px; font-weight:500; resize:vertical; }
+.checkout-field textarea:focus-visible { outline:3px solid var(--violet); outline-offset:2px; border-color:var(--graphite); }
+.arr-ok { max-width:560px; margin:22px 0 26px; padding:26px; border-radius:28px; background:#fff; box-shadow:0 14px 40px rgba(15,15,16,.08); }
+.arr-ok svg { color:var(--violet); }
+.arr-ok h2 { margin:10px 0 8px; }
+.arr-tramite { margin:0 0 14px; font-size:24px; font-weight:700; letter-spacing:.04em; overflow-wrap:anywhere; }
+@media (max-width: 560px) { .arr-form, .arr-ok { padding:20px; border-radius:22px; } .arr-form .button { align-self:stretch; } }
