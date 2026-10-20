@@ -875,7 +875,12 @@ body.nf-active .gemi-global { visibility:hidden; }
 @media (max-width:700px) { .checkout-pay .pay-actions { grid-template-columns:1fr; } }
 
 /* Casilla de novedades del login, aviso de «¿Querés enterarte?» y «Mi cuenta» */
-.auth-check--novedades { margin:0 0 6px; }
+/* La casilla del login está FUERA de .auth-form, así que no hereda `.auth-form .auth-check`: lleva su propio layout (fila, texto legible, área de toque cómoda). */
+.auth-check--novedades { display:flex; flex-direction:row; align-items:flex-start; gap:12px; margin:0 0 8px; padding:12px 14px; border:1.5px solid var(--borde-campo); border-radius:14px; background:#fff; color:var(--graphite); font-size:13px; font-weight:500; line-height:1.4; text-align:left; cursor:pointer; }
+.auth-check--novedades:has(input:checked) { border-color:var(--violet); background:color-mix(in srgb, var(--violet) 6%, white); }
+.auth-check--novedades:has(input:focus-visible) { outline:3px solid var(--violet); outline-offset:2px; }
+.auth-check--novedades input { width:20px; height:20px; margin:0; }
+.auth-check--novedades span { flex:1 1 auto; min-width:0; }
 .auth-nota { margin:0 0 12px; color:rgba(15,15,16,.7); font-size:11px; line-height:1.45; }
 .novedades-aviso { position:fixed; z-index:150; left:50%; bottom:14px; width:min(440px, calc(100% - 24px)); padding:18px 20px; border:1.5px solid var(--graphite); border-radius:24px; background:var(--cream); color:var(--graphite); box-shadow:0 18px 50px rgba(15,15,16,.28); transform:translateX(-50%); animation:novedades-in .35s ease; }
 .novedades-aviso h2 { margin:0 0 4px; font-size:16px; letter-spacing:-.03em; }
