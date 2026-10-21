@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 // SEO: un solo dominio en los buscadores. El dominio principal en Netlify es gemma-oficial.com.ar (sin www).
 const CANONICO = 'gemma-oficial.com.ar'
-const PRIVADAS = ['/admin', '/checkout', '/mis-compras', '/mi-cuenta', '/baja']
+const PRIVADAS = ['/admin', '/checkout', '/mis-compras', '/mi-cuenta', '/baja', '/auth']
 
 export function middleware(req: NextRequest) {
   const host = (req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? '').toLowerCase().replace(/:\d+$/, '')

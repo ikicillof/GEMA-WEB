@@ -3,8 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  GoogleAuthProvider, createUserWithEmailAndPassword, onAuthStateChanged, sendEmailVerification,
-  sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, signOut, updateProfile, type User,
+  GoogleAuthProvider, createUserWithEmailAndPassword, onAuthStateChanged,
+  signInWithEmailAndPassword, signInWithPopup, signOut, updateProfile, type User,
 } from 'firebase/auth'
 import { auth } from '@/lib/firebase/client'
 import { esRol, type Permiso, type Rol } from '@/lib/roles'
@@ -57,6 +57,26 @@ function traducir(e: unknown): ErrorAuth {
     'auth/user-disabled': 'Esta cuenta está deshabilitada. Escribinos para ayudarte.',
   }
   return new ErrorAuth(mensajes[codigo] ?? 'Algo salió mal. Probá de nuevo en un momento.', codigo)
+}
+
+/**
+ * Pide al servidor que mande un mail de verificación o de recuperación (los manda nuestro backend por Resend, no Firebase).
+ * `token` = ID token de la cuenta (solo para verificar); `cuerpo` = datos de la solicitud (solo para recuperar).
+ */
+async function pedirMail(url: string, opciones: { token?: string; cuerpo?: object } = {}): Promise<void> {
+  let res: Response
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(opciones.token ? { Authorization: `Bearer ${opciones.token}` } : {}) },
+      body: JSON.stringify(opciones.cuerpo ?? {}),
+    })
+  } catch {
+    throw new ErrorAuth('No hay conexión. Revisá tu internet y probá de nuevo.')
+  }
+  if (res.ok) return
+  const datos = await res.json().catch(() => ({})) as { error?: unknown }
+  throw new ErrorAuth(typeof datos.error === 'string' ? datos.error : 'No pudimos mandar el mail. Probá de nuevo en un momento.', 'auth/mail')
 }
 
 // Las credenciales de email y contraseña requieren email verificado; Google ya viene verificado.
@@ -158,33 +178,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { user } = await createUserWithEmailAndPassword(auth, email.trim(), password)
       await updateProfile(user, { displayName: nombre.trim() })
-      await sendEmailVerification(user)
+      // El mail «Confirmá tu email» lo manda nuestro servidor por Resend. Si falla, la cuenta igual queda creada: se avisa al final.
+      let errorMail: ErrorAuth | null = null
+      try { await pedirMail('/api/auth/enviar-verificacion', { token: await user.getIdToken() }) } catch (e) { errorMail = e instanceof ErrorAuth ? e : traducir(e) }
       // El perfil (y la preferencia de novedades) se crea en el servidor; el rol arranca en "cliente".
       await sincronizar(user, { nombre: nombre.trim(), recibeNovedades })
       await signOut(auth)
+      if (errorMail) throw new ErrorAuth(`Creamos tu cuenta, pero no pudimos mandarte el mail para confirmar tu email. ${errorMail.message} Cuando puedas, ingresá y te ofrecemos pedir otro.`)
     } catch (e) {
-      throw traducir(e)
+      throw e instanceof ErrorAuth ? e : traducir(e)
     }
   }, [])
 
   const reenviarVerificacion = useCallback(async (email: string, password: string) => {
     try {
       const { user } = await signInWithEmailAndPassword(auth, email.trim(), password)
-      if (requiereVerificar(user)) await sendEmailVerification(user)
-      await signOut(auth)
+      try {
+        if (requiereVerificar(user)) await pedirMail('/api/auth/enviar-verificacion', { token: await user.getIdToken() })
+      } finally {
+        await signOut(auth)
+      }
     } catch (e) {
-      throw traducir(e)
+      throw e instanceof ErrorAuth ? e : traducir(e)
     }
   }, [])
 
   const recuperarPassword = useCallback(async (email: string) => {
     try {
-      await sendPasswordResetEmail(auth, email.trim())
+      // El servidor responde siempre lo mismo (exista o no la cuenta) y manda el mail por Resend solo si corresponde.
+      await pedirMail('/api/auth/recuperar-contrasena', { cuerpo: { email: email.trim() } })
     } catch (e) {
-      // No revelamos si el email existe o no.
-      const codigo = (e as { code?: string }).code
-      if (codigo === 'auth/user-not-found') return
-      throw traducir(e)
+      throw e instanceof ErrorAuth ? e : traducir(e)
     }
   }, [])
 

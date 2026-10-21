@@ -7,6 +7,7 @@ import NuevaVentaDuena from '@/emails/nueva-venta-duena'
 import TransferenciaCompletada from '@/emails/transferencia-completada'
 import VentaCancelada from '@/emails/venta-cancelada'
 import type { DatosMail } from '@/emails/tipos'
+import { esMarcador, VENDEDORA } from '@/lib/vendedora'
 
 export type TipoMail = 'nueva_venta_duena' | 'confirmacion_cliente' | 'transferencia_completada' | 'venta_cancelada'
 const EMAIL_VALIDO = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/
@@ -14,9 +15,16 @@ export const pesos = (n: number) => new Intl.NumberFormat('es-AR', { style: 'cur
 
 export type MailArmado = { para: string; asunto: string; reply?: string; react: ReactElement }
 
+/** A dónde llegan las respuestas de los mails a clientes: RESEND_REPLY_TO si está cargado; si no, el email de contacto de lib/vendedora.ts. */
+export function emailDeRespuestas(): string | undefined {
+  const r = process.env.RESEND_REPLY_TO?.trim()
+  if (r && EMAIL_VALIDO.test(r)) return r
+  return !esMarcador(VENDEDORA.emailContacto) && EMAIL_VALIDO.test(VENDEDORA.emailContacto) ? VENDEDORA.emailContacto : undefined
+}
+
 export function armar(tipo: TipoMail, d: DatosMail, prueba: boolean, emailAvisos: string | null): MailArmado {
   const pref = prueba ? '[PRUEBA] ' : ''
-  const respuestas = process.env.RESEND_REPLY_TO?.trim() || undefined
+  const respuestas = emailDeRespuestas()
   if (tipo === 'nueva_venta_duena') {
     const para = emailAvisos
     if (!para) throw new Error('Falta configuracion/general.emailAvisos')

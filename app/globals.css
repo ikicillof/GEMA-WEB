@@ -949,3 +949,17 @@ body.nf-active .gemi-global { visibility:hidden; }
 .auth-pass-ojo { position:absolute; top:50%; right:4px; display:grid; place-items:center; width:44px; height:44px; padding:0; border:0; border-radius:12px; background:none; color:rgba(15,15,16,.7); transform:translateY(-50%); cursor:pointer; }
 .auth-pass-ojo:hover { color:var(--graphite); }
 .auth-pass-ojo:focus-visible { outline:3px solid var(--violet); outline-offset:-3px; }
+/* Página de acción de los mails (/auth/accion): confirmar email y elegir contraseña nueva */
+.accion { min-height:70vh; padding:130px 0 80px; background:var(--cream); color:var(--graphite); }
+.accion-card { display:flex; flex-direction:column; align-items:flex-start; gap:12px; max-width:480px; margin:0 auto; padding:28px; border-radius:28px; background:#fff; box-shadow:0 14px 40px rgba(15,15,16,.08); }
+.accion-card p { margin:0; font-size:15px; line-height:1.6; overflow-wrap:anywhere; }
+.accion-titulo { margin:4px 0 0; font-size:clamp(24px,6vw,32px); line-height:1.15; letter-spacing:-.04em; font-weight:700; }
+.accion-icono--ok { color:var(--violet); }
+.accion-icono--mal { color:var(--error); }
+.accion-botones { display:flex; flex-wrap:wrap; gap:12px; margin-top:8px; }
+.accion-form { display:flex; flex-direction:column; gap:16px; width:100%; margin-top:8px; }
+.accion-form .button { align-self:flex-start; }
+.accion-form .button:disabled { opacity:.6; cursor:wait; }
+.accion-ayuda { color:rgba(15,15,16,.7); font-size:12px !important; }
+.accion-card .checkout-field small.accion-ayuda { color:rgba(15,15,16,.7); font-weight:500; }
+@media (max-width: 560px) { .accion { padding:112px 0 60px; } .accion-card { padding:20px; border-radius:22px; } .accion-botones .button, .accion-form .button { width:100%; } }

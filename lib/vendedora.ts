@@ -14,7 +14,7 @@ export const VENDEDORA = {
   cuit: '20-35067988-0',
   condicionFiscal: 'Responsable Monotributo',
   domicilio: 'Esmeralda 2902, Florida (CP 1602), Provincia de Buenos Aires',
-  emailContacto: '[EMAIL DE CONTACTO]',
+  emailContacto: 'somosgemma.ar@gmail.com',
   sitio: 'gemma-oficial.com.ar',
   // Perfil de Instagram de la MARCA (https://www.instagram.com/…), para los datos estructurados del home (SEO). Mientras sea un marcador no se publica.
   instagram: '[URL DE INSTAGRAM DE LA MARCA]',
