@@ -124,7 +124,7 @@ Fotos: el navegador pide una firma a `POST /api/admin/uploads/firma` (carpeta y 
 
 ## Pendiente
 
-0. **Completar `lib/vendedora.ts`** (plazo de respuesta al arrepentimiento y plazo de reintegro, que van en el mail al cliente; razón social, CUIT, condición fiscal, domicilio, email de contacto, plazos y condiciones de cambios, criterio para personalizados, QR de Data Fiscal), hacer revisar las páginas legales y probar una solicitud real en `/arrepentimiento`.
+0. **Completar lo que queda de `lib/vendedora.ts`**: email de contacto, N.º de inscripción en el Registro de Bases de Datos (AAIP), URL de Instagram de la marca y los plazos y condiciones (transferencia, cambios, condiciones de cambio, reintegro, respuesta al arrepentimiento, reclamo por daños, criterio para productos personalizados). Los datos fiscales (razón social, CUIT, condición fiscal, domicilio) y el QR de Data Fiscal ya están cargados. Después: hacer revisar las páginas legales y probar una solicitud real en `/arrepentimiento`.
 
 1. Cargar `MERCADOPAGO_WEBHOOK_SECRET` y redeployar (commit vacío o «Clear cache and deploy»).
 2. Probar un pago real de prueba de punta a punta: pagar en Mercado Pago, volver a `/checkout/resultado` y ver el webhook marcando `pagado`. Hasta ahora el flujo se probó solo con un Mercado Pago simulado; nunca contra la API real ni con los avisos reales.
@@ -199,3 +199,5 @@ El zip original queda en `materials/` (carpeta ignorada por git: `materials/` es
 ## Data Fiscal (ARCA) en el footer (21/10)
 
 El sello oficial «Data Fiscal» (con el QR de la inscripción) sale en el footer de **todas las páginas** (`components/site-footer.tsx`, montado en `app/layout.tsx`). Datos en `lib/vendedora.ts` → `DATA_FISCAL`: imagen `public/data-fiscal.jpg` (la oficial `DATAWEB.jpg` de ARCA, 239x327 px, copiada al sitio: el original por `http` no carga desde una página `https`) y link `http://qr.afip.gob.ar/?qr=…` (redirige solo a la página segura de ARCA que valida la inscripción; se abre en otra pestaña). El sello es vertical, por eso tiene su propio tamaño (112 px de ancho, `.footer-qr--real`) y en pantallas anchas se corre 84 px para que no lo tape el Gemi flotante. Para cambiarlo: editar `DATA_FISCAL` y reemplazar la imagen. Verificar: abrir cualquier página, bajar al pie y hacer clic en el sello (tiene que abrir la página de ARCA con tus datos); o escanear el QR con el celular.
+
+**Datos fiscales cargados (21/10):** razón social BRELIS LEANDRO GUSTAVO, CUIT 20-35067988-0 (coincide con el CUIT del QR de ARCA), Responsable Monotributo, domicilio fiscal Esmeralda 2902, Florida (CP 1602), Provincia de Buenos Aires. Salen en el footer de todas las páginas y en Términos y Privacidad. Siguen con marcador amarillo los otros datos (lista en el punto 0 de «Pendiente»).
