@@ -10,7 +10,14 @@ export default function PrivacidadPage() {
     <p>En Gemma cuidamos tus datos personales. Esta política explica qué datos guardamos, para qué, con quién los compartimos y cómo podés ejercer tus derechos, de acuerdo con la <b>Ley 25.326 de Protección de los Datos Personales</b> y sus normas complementarias.</p>
 
     <h2 id="responsable">1. Responsable de los datos</h2>
-    <p><b><Dato v={VENDEDORA.razonSocial} /></b>, CUIT <Dato v={VENDEDORA.cuit} />, domicilio en <Dato v={VENDEDORA.domicilio} />. Contacto para temas de datos personales: <EmailContacto v={VENDEDORA.emailContacto} />.</p>
+    <p>El responsable de la base de datos y del tratamiento de tus datos personales es el vendedor de la marca «{VENDEDORA.nombreComercial}»:</p>
+    <ul>
+      <li><b>Razón social:</b> <Dato v={VENDEDORA.razonSocial} /></li>
+      <li><b>CUIT:</b> <Dato v={VENDEDORA.cuit} /></li>
+      <li><b>Condición fiscal:</b> <Dato v={VENDEDORA.condicionFiscal} /></li>
+      <li><b>Domicilio fiscal:</b> <Dato v={VENDEDORA.domicilio} /></li>
+      <li><b>Contacto para temas de datos personales:</b> <EmailContacto v={VENDEDORA.emailContacto} /></li>
+    </ul>
     <p>La base de datos se encuentra registrada ante la Agencia de Acceso a la Información Pública: <Dato v={VENDEDORA.registroAAIP} />.</p>
 
     <h2 id="datos">2. Qué datos guardamos</h2>

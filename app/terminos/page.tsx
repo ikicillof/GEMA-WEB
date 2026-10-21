@@ -9,8 +9,15 @@ export default function TerminosPage() {
   return <LegalLayout kicker="Legales" titulo="Términos y condiciones">
     <p>Estos términos regulan las compras que hacés en <b>{VENDEDORA.sitio}</b>. Leelos antes de comprar: al hacer un pedido los aceptás. Están pensados para que se entiendan, y se aplican junto con la Ley 24.240 de Defensa del Consumidor y el Código Civil y Comercial de la Nación.</p>
 
-    <h2 id="vendedora">1. Quién vende</h2>
-    <p>Los productos los vende <b><Dato v={VENDEDORA.razonSocial} /></b> (marca «{VENDEDORA.nombreComercial}»), CUIT <Dato v={VENDEDORA.cuit} />, <Dato v={VENDEDORA.condicionFiscal} />, con domicilio en <Dato v={VENDEDORA.domicilio} />. Podés escribirnos a <EmailContacto v={VENDEDORA.emailContacto} /> o desde la página de <Link href="/contacto">Contacto</Link>.</p>
+    <h2 id="vendedor">1. Datos del vendedor</h2>
+    <ul>
+      <li><b>Razón social:</b> <Dato v={VENDEDORA.razonSocial} /></li>
+      <li><b>CUIT:</b> <Dato v={VENDEDORA.cuit} /></li>
+      <li><b>Condición fiscal:</b> <Dato v={VENDEDORA.condicionFiscal} /></li>
+      <li><b>Domicilio fiscal:</b> <Dato v={VENDEDORA.domicilio} /></li>
+      <li><b>Email de contacto:</b> <EmailContacto v={VENDEDORA.emailContacto} /></li>
+    </ul>
+    <p>Los productos se venden bajo la marca «{VENDEDORA.nombreComercial}». También podés escribirnos desde la página de <Link href="/contacto">Contacto</Link>.</p>
 
     <h2 id="como-se-compra">2. Cómo se compra</h2>
     <ul>
@@ -46,7 +53,7 @@ export default function TerminosPage() {
     <p>Los cambios, las devoluciones y el caso de los productos personalizados están explicados en la página de <Link href="/devoluciones">Cambios y devoluciones</Link>, que forma parte de estos términos.</p>
 
     <h2 id="arrepentimiento">8. Botón de arrepentimiento</h2>
-    <p>Si compraste por internet, tenés derecho a <b>arrepentirte</b> y revocar la compra dentro de los <b>10 días corridos</b> contados desde que recibís el producto o desde que se celebró el contrato, lo que ocurra último (artículo 34 de la Ley 24.240 y artículos 1110 y siguientes del Código Civil y Comercial). Los gastos de la devolución corren por cuenta de la vendedora.</p>
+    <p>Si compraste por internet, tenés derecho a <b>arrepentirte</b> y revocar la compra dentro de los <b>10 días corridos</b> contados desde que recibís el producto o desde que se celebró el contrato, lo que ocurra último (artículo 34 de la Ley 24.240 y artículos 1110 y siguientes del Código Civil y Comercial). Los gastos de la devolución corren por cuenta de Gemma.</p>
     <p>Para pedirlo usá el <Link href="/arrepentimiento"><b>Botón de arrepentimiento</b></Link>, que está siempre visible al pie de todas las páginas, como establece la Resolución 424/2020 de la Secretaría de Comercio Interior. Al enviarlo te damos un número de trámite por email.</p>
 
     <h2 id="garantia">9. Garantía legal</h2>
@@ -59,7 +66,7 @@ export default function TerminosPage() {
     <p>Tratamos tus datos como explicamos en la <Link href="/privacidad">Política de privacidad</Link>. Solo te mandamos novedades por email si lo pediste, y podés darte de baja cuando quieras desde cualquier mail o desde «Mi cuenta».</p>
 
     <h2 id="propiedad">12. Propiedad intelectual</h2>
-    <p>Los diseños, textos, fotos, modelos 3D y la marca Gemma pertenecen a la vendedora o se usan con autorización. No pueden copiarse ni reproducirse sin permiso, salvo para uso personal.</p>
+    <p>Los diseños, textos, fotos, modelos 3D y la marca Gemma pertenecen a Gemma (el vendedor) o se usan con autorización. No pueden copiarse ni reproducirse sin permiso, salvo para uso personal.</p>
 
     <h2 id="cambios-terminos">13. Cambios en estos términos</h2>
     <p>Podemos actualizar estos términos. La versión vigente es la publicada en esta página al momento de tu compra, y esa es la que se aplica a tu pedido.</p>

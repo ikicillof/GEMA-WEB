@@ -5,7 +5,7 @@ import { RANGO } from '@/lib/roles'
 import { FECHA_LEGALES, esMarcador, marcadoresPendientes } from '@/lib/vendedora'
 import { useAuth } from './auth-provider'
 
-/** Un dato de la vendedora: si todavía es un marcador [ASÍ], se ve resaltado para que no se publique sin completar. */
+/** Un dato del vendedor: si todavía es un marcador [ASÍ], se ve resaltado para que no se publique sin completar. */
 export function Dato({ v }: { v: string }) {
   return esMarcador(v) ? <mark className="marcador">{v}</mark> : <>{v}</>
 }
@@ -29,7 +29,7 @@ function NotaInterna({ extra }: { extra?: ReactNode }) {
     {extra}
     {pendientes.length > 0
       ? <p>Datos pendientes de completar en <code>lib/vendedora.ts</code> ({pendientes.length}): {pendientes.map(p => p.valor).join(' · ')}</p>
-      : <p>Todos los datos de la vendedora están completos.</p>}
+      : <p>Todos los datos del vendedor están completos.</p>}
   </aside>
 }
 

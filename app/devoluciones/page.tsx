@@ -14,14 +14,14 @@ export default function DevolucionesPage() {
     <ul>
       <li>Para pedirlo, usá el <Link href="/arrepentimiento"><b>Botón de arrepentimiento</b></Link> (siempre visible al pie del sitio). Vas a recibir por email un número de trámite.</li>
       <li>El producto tiene que estar en las mismas condiciones en que lo recibiste y, si es posible, con su embalaje.</li>
-      <li><b>Los gastos de la devolución corren por cuenta de la vendedora.</b> Te indicamos cómo hacer el envío de vuelta.</li>
+      <li><b>Los gastos de la devolución corren por cuenta de Gemma.</b> Te indicamos cómo hacer el envío de vuelta.</li>
       <li>Te devolvemos el dinero <b>por el mismo medio de pago</b> que usaste, dentro de <Dato v={CONDICIONES.plazoReintegro} /> desde que recibimos el producto.</li>
     </ul>
 
     <h2 id="personalizados">2. Productos personalizados (y el color que elegís)</h2>
     <p>Todos los productos de Gemma se fabrican a pedido en el color que elegís. Pero <b>elegir un color de nuestra paleta no hace que el producto sea personalizado</b>: seguís teniendo el derecho de arrepentimiento del punto 1.</p>
     <p>La ley (artículo 1116, inciso c, del Código Civil y Comercial) excluye del arrepentimiento a los bienes <b>claramente personalizados</b> o confeccionados según tus especificaciones. Eso aplica, por ejemplo, a un pedido especial que acordamos con vos (un diseño propio, un texto, medidas o un color fuera de la paleta). En esos casos te lo avisamos <b>antes de que pagues</b>.</p>
-    <p>Criterio de la vendedora: <Dato v={CONDICIONES.criterioPersonalizados} />.</p>
+    <p>Criterio de Gemma: <Dato v={CONDICIONES.criterioPersonalizados} />.</p>
     <p>En cualquier caso, <b>la garantía legal por defectos se mantiene</b>: si tu producto personalizado llega con un defecto, lo resolvemos.</p>
 
     <h2 id="cambios">3. Cambios</h2>
@@ -31,7 +31,7 @@ export default function DevolucionesPage() {
     <ul>
       <li>Escribinos con tu número de pedido y fotos del producto y del paquete. Si fue un daño del envío, avisanos dentro de <Dato v={CONDICIONES.plazoReclamoDanos} />.</li>
       <li>Tenés la <b>garantía legal de 3 meses</b> desde la entrega (Ley 24.240). Podés elegir entre la reparación o el cambio sin cargo, o la devolución del dinero cuando corresponda.</li>
-      <li>En estos casos los costos del envío de vuelta y del nuevo envío son por cuenta de la vendedora.</li>
+      <li>En estos casos los costos del envío de vuelta y del nuevo envío son por cuenta de Gemma.</li>
     </ul>
 
     <h2 id="como">5. Cómo se hace una devolución, paso a paso</h2>

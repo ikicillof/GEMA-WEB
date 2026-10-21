@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { Instagram, Mail, MessageCircle, Send } from 'lucide-react'
-import { DATA_FISCAL, VENDEDORA } from '@/lib/vendedora'
-import { Dato } from './legal'
+import { DATA_FISCAL } from '@/lib/vendedora'
 
 export function SiteFooter() {
   return <footer className="site-footer"><div className="shell">
@@ -12,10 +11,6 @@ export function SiteFooter() {
       <nav aria-label="Información legal"><p className="footer-label">Legales</p><div className="footer-links"><Link href="/terminos">Términos y condiciones</Link><Link href="/privacidad">Política de privacidad</Link><Link href="/devoluciones">Cambios y devoluciones</Link><Link href="/arrepentimiento">Botón de arrepentimiento</Link></div></nav>
     </div>
     <div className="footer-vendedora">
-      <p>
-        <b>{VENDEDORA.nombreComercial}</b> es una marca de <Dato v={VENDEDORA.razonSocial} /> · CUIT <Dato v={VENDEDORA.cuit} /><br />
-        <Dato v={VENDEDORA.condicionFiscal} /> · <Dato v={VENDEDORA.domicilio} />
-      </p>
       {DATA_FISCAL.qrImagen
         ? <a className="footer-qr footer-qr--real" href={DATA_FISCAL.qrUrl ?? undefined} target="_blank" rel="noopener noreferrer" aria-label="Data Fiscal (ARCA): verificar la inscripción, se abre en otra pestaña"><img src={DATA_FISCAL.qrImagen} alt="Data Fiscal: código QR de ARCA" width={239} height={327} loading="lazy" /></a>
         : <div className="footer-qr" role="img" aria-label="Espacio reservado para el QR de Data Fiscal">[QR DATA FISCAL]</div>}
