@@ -1,6 +1,9 @@
 // Tipos y constantes del checkout y los envíos. Sin secretos: lo usan el servidor y el navegador.
 
-export const WHATSAPP_NUMERO = '5491128397462'
+import { VENDEDORA } from '@/lib/vendedora'
+
+/** WhatsApp de la tienda (sin +): se carga en lib/vendedora.ts. */
+export const WHATSAPP_NUMERO: string = VENDEDORA.whatsapp
 
 // Códigos de provincia de una letra (ISO 3166-2:AR), los que usa la API MiCorreo.
 export const PROVINCIAS = [

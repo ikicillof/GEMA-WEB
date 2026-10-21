@@ -23,7 +23,7 @@ const base: DatosMail = {
   metodoPago: 'mercadopago',
   urlPanel: 'https://backend--gemmaweb.netlify.app/admin/ventas/EJEMPLO0Pedido1',
   transferencia: null,
-  urlWhatsApp: 'https://wa.me/5491128397462?text=Hola%20Gemma',
+  urlWhatsApp: 'https://wa.me/5491164360868?text=Hola%20Gemma',
   urlMisCompras: 'https://backend--gemmaweb.netlify.app/mis-compras',
   urlTienda: 'https://backend--gemmaweb.netlify.app/tienda',
 }
@@ -35,7 +35,7 @@ const transferencia: DatosMail = {
   total: 33600,
   urlPanel: 'https://backend--gemmaweb.netlify.app/admin/ventas/EJEMPLO0Pedido2',
   transferencia: { alias: 'gemma.tienda.ejemplo', titular: 'Titular de ejemplo', banco: 'Banco de ejemplo', provisorio: true },
-  urlWhatsApp: 'https://wa.me/5491128397462?text=Hola%20Gemma%2C%20soy%20Ana%20Prueba.%20Te%20env%C3%ADo%20el%20comprobante%20del%20pedido%20EJEMPLO0Pedido2.',
+  urlWhatsApp: 'https://wa.me/5491164360868?text=Hola%20Gemma%2C%20soy%20Ana%20Prueba.%20Te%20env%C3%ADo%20el%20comprobante%20del%20pedido%20EJEMPLO0Pedido2.',
 }
 
 const casos = [

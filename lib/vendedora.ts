@@ -15,6 +15,10 @@ export const VENDEDORA = {
   condicionFiscal: 'Responsable Monotributo',
   domicilio: 'Esmeralda 2902, Florida (CP 1602), Provincia de Buenos Aires',
   emailContacto: 'somosgemma.ar@gmail.com',
+  // WhatsApp de la tienda: solo dígitos, con código de país (54 9 11 6436-0868). De acá salen el footer, «Contacto» y el número por defecto
+  // de los mails y de la transferencia (si en el panel → Configuración hay otro WhatsApp, los mails usan ese).
+  whatsapp: '5491164360868',
+  whatsappVisible: '+54 9 11 6436-0868',
   sitio: 'gemma-oficial.com.ar',
   // Perfil de Instagram de la MARCA (https://www.instagram.com/…), para los datos estructurados del home (SEO). Mientras sea un marcador no se publica.
   instagram: 'https://www.instagram.com/somosgemma.ar?cplk=b3o5ZmpiMjljd29i',
@@ -50,6 +54,11 @@ export const DATA_FISCAL: { qrImagen: string | null; qrUrl: string | null } = {
 export const FECHA_LEGALES = '20 de octubre de 2026'
 
 export const esMarcador = (valor: string) => /^\[.+\]$/.test(valor.trim())
+
+/** Usuario de Instagram sacado de la URL de VENDEDORA.instagram (ej.: «somosgemma.ar»), para mostrarlo como @usuario. */
+export function instagramUsuario(): string {
+  try { return new URL(VENDEDORA.instagram).pathname.split('/').filter(Boolean)[0] ?? '' } catch { return '' }
+}
 
 /** Datos que todavía están entre corchetes (para el aviso interno y para el doc de pendientes). */
 export function marcadoresPendientes(): { clave: string; valor: string }[] {

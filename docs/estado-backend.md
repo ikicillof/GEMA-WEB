@@ -233,3 +233,11 @@ El sello oficial «Data Fiscal» (con el QR de la inscripción) sale en el foote
 **Pendiente opcional:** si la base de datos se inscribe en el Registro Nacional de Bases de Datos Personales (AAIP, Ley 25.326), escribir el número en `registroAAIP` y la línea vuelve a aparecer sola.
 
 Detalle a tener en cuenta: el texto de la «nota interna» de cada página legal (la caja punteada que solo ven admin y creador, que menciona esta inscripción) no se dibuja para el público, pero viaja dentro de los datos que Next manda al navegador junto con la página, así que se puede leer con «Ver código fuente». No es información sensible, pero el comentario de `components/legal.tsx` que dice que «ni siquiera sale en el HTML» no es del todo cierto.
+
+## Contacto: Gmail, WhatsApp e Instagram de la marca; sello centrado (21/10)
+
+- **Datos de contacto en un solo lugar, `lib/vendedora.ts`:** `emailContacto` = `somosgemma.ar@gmail.com`, `whatsapp` = `5491164360868` (se muestra «+54 9 11 6436-0868», `whatsappVisible`) e `instagram` (URL de la marca; el `@usuario` se saca de la URL con `instagramUsuario()`). De ahí leen el footer, «Contacto», el número por defecto de los mails y la página de transferencia (`WHATSAPP_NUMERO` en `lib/envio.ts` ahora sale de `VENDEDORA.whatsapp`). Ya no queda en el código el Gmail, el teléfono ni el Instagram personales.
+- **WhatsApp en el panel:** el valor guardado en `configuracion/general.whatsapp` (panel → Configuración) tiene prioridad en los mails: seguía siendo el provisorio viejo y se actualizó a `5491164360868`. Los datos de transferencia (alias, titular, banco) siguen siendo de ejemplo. El email de avisos (`emailAvisos`, adonde llegan los avisos internos de ventas y arrepentimientos) **no se tocó**: sigue en `ikicillof@gmail.com`; se cambia en el panel → Configuración.
+- **«Contacto»:** se sacó la tarjeta «Retiro» (Vicente López). Sigue diciendo «retiro en Vicente López» el subtítulo del mapa de entrega de `/tienda` (`components/delivery-map.tsx`); no se tocó.
+- **Footer:** el sello de Data Fiscal quedó centrado en el pie (se quitó el corrimiento que lo esquivaba al Gemi flotante, que ya no se superpone).
+- **Instagram:** la URL de `VENDEDORA.instagram` trae un parámetro de seguimiento (`?cplk=…`); conviene dejarla como `https://www.instagram.com/somosgemma.ar`.

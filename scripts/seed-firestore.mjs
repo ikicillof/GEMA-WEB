@@ -37,7 +37,7 @@ if ((await cfg.get()).get('descuentoTransferenciaPct') === undefined) {
 const actual = await cfg.get()
 const provisorios = {}
 if (actual.get('datosTransferencia') === undefined) provisorios.datosTransferencia = { alias: 'gemma.tienda.ejemplo', titular: 'Titular de ejemplo', banco: 'Banco de ejemplo', provisorio: true }
-if (actual.get('whatsapp') === undefined) provisorios.whatsapp = '5491128397462'
+if (actual.get('whatsapp') === undefined) provisorios.whatsapp = '5491164360868'
 if (actual.get('emailAvisos') === undefined) provisorios.emailAvisos = 'ikicillof@gmail.com'
 if (Object.keys(provisorios).length) {
   await cfg.set({ ...provisorios, datosProvisorios: true }, { merge: true })
