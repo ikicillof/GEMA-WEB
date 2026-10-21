@@ -124,7 +124,7 @@ Fotos: el navegador pide una firma a `POST /api/admin/uploads/firma` (carpeta y 
 
 ## Pendiente
 
-0. **Completar lo que queda de `lib/vendedora.ts`**: N.º de inscripción en el Registro de Bases de Datos (AAIP), URL de Instagram de la marca y los plazos y condiciones (transferencia, cambios, condiciones de cambio, reintegro, respuesta al arrepentimiento, reclamo por daños, criterio para productos personalizados). Los datos fiscales (razón social, CUIT, condición fiscal, domicilio) y el QR de Data Fiscal ya están cargados. Después: hacer revisar las páginas legales y probar una solicitud real en `/arrepentimiento`.
+0. **Completar lo que queda de `lib/vendedora.ts`**: URL de Instagram de la marca y los plazos y condiciones (transferencia, cambios, condiciones de cambio, reintegro, respuesta al arrepentimiento, reclamo por daños, criterio para productos personalizados). Los datos fiscales (razón social, CUIT, condición fiscal, domicilio) y el QR de Data Fiscal ya están cargados. Después: hacer revisar las páginas legales y probar una solicitud real en `/arrepentimiento`.
 
 1. Cargar `MERCADOPAGO_WEBHOOK_SECRET` y redeployar (commit vacío o «Clear cache and deploy»).
 2. Probar un pago real de prueba de punta a punta: pagar en Mercado Pago, volver a `/checkout/resultado` y ver el webhook marcando `pagado`. Hasta ahora el flujo se probó solo con un Mercado Pago simulado; nunca contra la API real ni con los avisos reales.
@@ -208,7 +208,7 @@ El sello oficial «Data Fiscal» (con el QR de la inscripción) sale en el foote
 - **Datos del vendedor** (`lib/vendedora.ts`, único lugar): razón social BRELIS LEANDRO GUSTAVO, CUIT 20-35067988-0, Responsable Monotributo, domicilio fiscal Esmeralda 2902, Florida (CP 1602), Provincia de Buenos Aires. El email de contacto sigue como marcador.
 - **`/terminos`:** la sección 1 pasó a ser «Datos del vendedor» (razón social, CUIT, condición fiscal, domicilio fiscal y email de contacto, todo leído de `lib/vendedora.ts`); el ancla cambió de `#vendedora` a `#vendedor`. **`/privacidad`:** el responsable de los datos figura con esos mismos datos. En `/devoluciones` y `/arrepentimiento` no hay datos del vendedor: allí se dice «Gemma».
 - **Redacción neutra:** «la vendedora» se cambió por «Gemma» o «el vendedor» en todos los textos legales (Términos, Devoluciones y la nota interna).
-- **Marcadores `[…]` que siguen** (todos en `lib/vendedora.ts`): `registroAAIP` (Privacidad), `plazoTransferencia` (Términos), `plazoCambios`, `condicionesCambios` y `criterioPersonalizados` (Devoluciones), `plazoReintegro` (Devoluciones y mail de arrepentimiento), `plazoRespuestaArrepentimiento` (mail de arrepentimiento), `plazoReclamoDanos` (Términos y Devoluciones) e `instagram` (datos estructurados del SEO, no se ve en pantalla).
+- **Marcadores `[…]` que siguen** (todos en `lib/vendedora.ts`): `plazoTransferencia` (Términos), `plazoCambios`, `condicionesCambios` y `criterioPersonalizados` (Devoluciones), `plazoReintegro` (Devoluciones y mail de arrepentimiento), `plazoRespuestaArrepentimiento` (mail de arrepentimiento), `plazoReclamoDanos` (Términos y Devoluciones) e `instagram` (datos estructurados del SEO, no se ve en pantalla).
 
 ## Email de contacto y mails de cuenta por Resend (21/10)
 
@@ -225,3 +225,11 @@ El sello oficial «Data Fiscal» (con el QR de la inscripción) sale en el foote
 **El día de la publicación:** en Firebase Console → Authentication → Plantillas (Templates) poner como URL de acción `https://gemma-oficial.com.ar/auth/accion` (editar la plantilla → «Personalizar URL de acción»). Con el sistema actual los links los armamos nosotros y no dependen de esa URL, pero así cualquier mail que Firebase llegara a mandar también cae en nuestra página. Además, `gemma-oficial.com.ar` tiene que estar en Authentication → Settings → Authorized domains.
 
 **Cómo se probó (local, build + `next start`, cuentas temporales `@example.com` ya borradas; no se mandó ningún mail real):** links generados con los modos correctos; `/auth/accion` confirmó el email (`emailVerified` pasó a true), mostró el error «Este enlace no sirve» al reusar el link, y cambió una contraseña (validó contraseñas distintas y cortas; la nueva funciona y la vieja no). Rutas: 401 sin token o con token inválido; cuenta ya verificada → `yaVerificado` aunque el body traiga otro email; `recuperar` con email mal escrito o con campos extra → 400; email sin cuenta → siempre el mismo 200 y el 4.º intento en la hora → 429. **No se probó el envío real por Resend de estos dos mails** (sí el armado y la versión texto): probarlo en el deploy.
+
+## Registro Nacional de Bases de Datos en /privacidad (21/10)
+
+`VENDEDORA.registroAAIP` (`lib/vendedora.ts`) quedó **vacío** y `/privacidad` solo muestra la línea «La base de datos se encuentra registrada ante la Agencia de Acceso a la Información Pública: …» cuando el campo tiene valor: vacío, no se muestra nada (ni línea, ni título, ni texto de reemplazo) y el resto de la página se lee completo. Ningún otro lugar usa ese campo (mails, footer y Términos no lo mencionan). Ya no figura entre los marcadores pendientes.
+
+**Pendiente opcional:** si la base de datos se inscribe en el Registro Nacional de Bases de Datos Personales (AAIP, Ley 25.326), escribir el número en `registroAAIP` y la línea vuelve a aparecer sola.
+
+Detalle a tener en cuenta: el texto de la «nota interna» de cada página legal (la caja punteada que solo ven admin y creador, que menciona esta inscripción) no se dibuja para el público, pero viaja dentro de los datos que Next manda al navegador junto con la página, así que se puede leer con «Ver código fuente». No es información sensible, pero el comentario de `components/legal.tsx` que dice que «ni siquiera sale en el HTML» no es del todo cierto.

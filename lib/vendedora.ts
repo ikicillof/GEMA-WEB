@@ -17,9 +17,12 @@ export const VENDEDORA = {
   emailContacto: 'somosgemma.ar@gmail.com',
   sitio: 'gemma-oficial.com.ar',
   // Perfil de Instagram de la MARCA (https://www.instagram.com/…), para los datos estructurados del home (SEO). Mientras sea un marcador no se publica.
-  instagram: '[URL DE INSTAGRAM DE LA MARCA]',
-  // Registro Nacional de Bases de Datos Personales (Agencia de Acceso a la Información Pública, Ley 25.326).
-  registroAAIP: '[N.º DE INSCRIPCIÓN EN EL REGISTRO NACIONAL DE BASES DE DATOS]',
+  instagram: 'https://www.instagram.com/somosgemma.ar?cplk=b3o5ZmpiMjljd29i',
+  // N.º de inscripción en el Registro Nacional de Bases de Datos Personales (Agencia de Acceso a la Información Pública, Ley 25.326).
+  // Mientras esté VACÍO, /privacidad no muestra nada sobre el registro (ni la línea ni un texto de reemplazo).
+  // Cuando lo tengas, escribilo acá entre comillas (ej.: '12345') y la línea «La base de datos se encuentra registrada ante la AAIP: …»
+  // vuelve a aparecer sola en /privacidad, sin tocar nada más.
+  registroAAIP: '' as string,
 } as const
 
 export const CONDICIONES = {

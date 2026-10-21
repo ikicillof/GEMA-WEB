@@ -18,7 +18,8 @@ export default function PrivacidadPage() {
       <li><b>Domicilio fiscal:</b> <Dato v={VENDEDORA.domicilio} /></li>
       <li><b>Contacto para temas de datos personales:</b> <EmailContacto v={VENDEDORA.emailContacto} /></li>
     </ul>
-    <p>La base de datos se encuentra registrada ante la Agencia de Acceso a la Información Pública: <Dato v={VENDEDORA.registroAAIP} />.</p>
+    {/* Solo si ya hay número de inscripción (lib/vendedora.ts → registroAAIP). Vacío = no se muestra nada. */}
+    {VENDEDORA.registroAAIP.trim() && <p>La base de datos se encuentra registrada ante la Agencia de Acceso a la Información Pública: <Dato v={VENDEDORA.registroAAIP} />.</p>}
 
     <h2 id="datos">2. Qué datos guardamos</h2>
     <ul>
