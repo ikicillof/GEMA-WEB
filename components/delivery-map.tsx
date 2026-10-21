@@ -88,7 +88,6 @@ export function DeliveryMap() {
   const maskRef = useRef<SVGPathElement>(null)
   const motoRef = useRef<SVGGElement>(null)
   const titleRef = useRef<HTMLHeadingElement>(null)
-  const subRef = useRef<HTMLParagraphElement>(null)
   const layout = mobile ? MOBILE : DESKTOP
   const routeD = rounded(layout.route, 34)
 
@@ -116,10 +115,9 @@ export function DeliveryMap() {
       const nowArrived = p >= BRAKE_AT
       mask.style.strokeDashoffset = `${L - (nowArrived ? L : len)}`
       if (nowArrived !== isArrived) { isArrived = nowArrived; setArrived(nowArrived) }
-      const t = titleRef.current, s = subRef.current
-      const o1 = Math.min(1, Math.max(0, (p - 0.05) / 0.2)), o2 = Math.min(1, Math.max(0, (p - 0.3) / 0.2))
+      const t = titleRef.current
+      const o1 = Math.min(1, Math.max(0, (p - 0.05) / 0.2))
       if (t) { t.style.opacity = `${o1}`; t.style.transform = `translateY(${(1 - o1) * 18}px)` }
-      if (s) { s.style.opacity = `${o2}`; s.style.transform = `translateY(${(1 - o2) * 14}px)` }
     }
     if (reduced) { render(1); return }
     // Como un video: arranca solo cuando el mapa se ve completo y corre por tiempo, sin depender del scroll.
@@ -154,7 +152,6 @@ export function DeliveryMap() {
       <div className="delivery-copy">
         <p className="eyebrow">Entrega</p>
         <h2 id="delivery-title" ref={titleRef} className="delivery-title">Te lo llevamos a la puerta de tu casa</h2>
-        <p ref={subRef} className="delivery-sub">Envío por motomensajería o retiro en Vicente López</p>
       </div>
       <div className="delivery-card">
         <svg viewBox={`0 0 ${layout.w} ${layout.h}`} role="img" aria-label="Mapa ilustrado de zona norte con una moto de Gemma que lleva un pedido hasta la puerta de una casita" preserveAspectRatio="xMidYMid slice">
