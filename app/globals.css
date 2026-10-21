@@ -921,6 +921,12 @@ body.nf-active .gemi-global { visibility:hidden; }
 .footer-vendedora p { max-width:62ch; margin:0; color:rgba(255,255,255,.72); font-size:12px; line-height:1.75; }
 .footer-qr { display:grid; place-items:center; width:96px; height:96px; padding:6px; border:1.5px dashed rgba(255,255,255,.4); border-radius:12px; color:rgba(255,255,255,.65); font-size:9px; font-weight:700; letter-spacing:.06em; text-align:center; text-transform:uppercase; }
 .footer-qr img { display:block; width:100%; height:100%; object-fit:contain; border-radius:6px; background:#fff; }
+/* Sello oficial de Data Fiscal (vertical, 239x327): sin recuadro punteado y con tamaño suficiente para que el QR se pueda escanear. */
+.footer-qr--real { display:block; width:112px; height:auto; padding:0; border:0; border-radius:8px; }
+.footer-qr--real img { height:auto; border-radius:8px; }
+.footer-qr--real:focus-visible { outline:3px solid var(--turquoise); outline-offset:3px; }
+/* En pantallas anchas el Gemi flotante queda en la esquina inferior derecha: el sello se corre para que no lo tape. */
+@media (min-width: 701px) { .footer-qr--real { margin-right:84px; } }
 .footer-bottom .footer-arrepentimiento { font-size:12px; font-weight:700; }
 .button--claro { border:1.5px solid #fff; background:transparent; color:#fff; }
 .button--claro:hover { background:rgba(255,255,255,.14); }

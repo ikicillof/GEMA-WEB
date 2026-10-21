@@ -17,7 +17,7 @@ export function SiteFooter() {
         <Dato v={VENDEDORA.condicionFiscal} /> · <Dato v={VENDEDORA.domicilio} />
       </p>
       {DATA_FISCAL.qrImagen
-        ? <a className="footer-qr" href={DATA_FISCAL.qrUrl ?? undefined} target="_blank" rel="noreferrer" aria-label="Data Fiscal (ARCA)"><img src={DATA_FISCAL.qrImagen} alt="QR de Data Fiscal" /></a>
+        ? <a className="footer-qr footer-qr--real" href={DATA_FISCAL.qrUrl ?? undefined} target="_blank" rel="noopener noreferrer" aria-label="Data Fiscal (ARCA): verificar la inscripción, se abre en otra pestaña"><img src={DATA_FISCAL.qrImagen} alt="Data Fiscal: código QR de ARCA" width={239} height={327} loading="lazy" /></a>
         : <div className="footer-qr" role="img" aria-label="Espacio reservado para el QR de Data Fiscal">[QR DATA FISCAL]</div>}
     </div>
     <div className="footer-bottom">

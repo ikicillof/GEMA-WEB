@@ -37,7 +37,12 @@ export const CONDICIONES = {
 
 // QR de Data Fiscal (ARCA, ex AFIP). Cuando lo tengas: guardá la imagen en /public (ej. public/data-fiscal.png) y completá
 // `qrImagen: '/data-fiscal.png'` y `qrUrl` con la dirección a la que lleva el QR. Mientras tanto el footer muestra un espacio reservado.
-export const DATA_FISCAL: { qrImagen: string | null; qrUrl: string | null } = { qrImagen: null, qrUrl: null }
+// Cargado el 21/10 con el código de Data Fiscal de ARCA. La imagen oficial (DATAWEB.jpg) se guarda en /public para no depender de un servidor
+// externo (el original por http no carga desde un sitio https); el link es el oficial de ARCA y lleva a la página que valida la inscripción.
+export const DATA_FISCAL: { qrImagen: string | null; qrUrl: string | null } = {
+  qrImagen: '/data-fiscal.jpg',
+  qrUrl: 'http://qr.afip.gob.ar/?qr=K2n6Gnj7sF4UWzddMF5umA,,',
+}
 
 export const FECHA_LEGALES = '20 de octubre de 2026'
 
